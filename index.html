@@ -17,10 +17,20 @@
     --rust: #A8432E;
     --soil: #7A5B3A;
     --sky: #4A6B7A;
+    --prune: #7A5C8C;
+    --frost: #5C7A93;
     --line: #C7BC9C;
     --line-strong: #A79A72;
   }
   *{box-sizing:border-box;}
+  button, input, select{ font: inherit; }
+  button:focus-visible, input:focus-visible, select:focus-visible, .crop-btn:focus-visible, .tab-btn:focus-visible{
+    outline: 2.5px solid var(--rust); outline-offset: 2px;
+  }
+  @media (prefers-reduced-motion: reduce){
+    *{ transition: none !important; animation: none !important; }
+  }
+  .crop-btn, .tab-btn, .candidate-item, .dashboard-btn, .ics-btn{ transition: background-color .15s ease, border-color .15s ease, color .15s ease; }
   body{
     margin:0;
     background:var(--paper);
@@ -53,6 +63,7 @@
   .brand p{ margin:2px 0 0; font-size:13px; color: var(--soil); }
   .month-picker{ display:flex; align-items:center; gap:8px; font-family:'JetBrains Mono', monospace; font-size:13px; }
   .month-picker select{ font-family:'JetBrains Mono', monospace; font-size:13px; padding:7px 10px; background: var(--paper-2); border:1px solid var(--line-strong); border-radius:3px; color:var(--ink); }
+  .theme-toggle{ padding:7px 12px; background:var(--paper-2); border:1px solid var(--line-strong); border-radius:3px; font-family:'Inter', sans-serif; font-size:12.5px; font-weight:600; cursor:pointer; color:var(--ink); white-space:nowrap; }
 
   .tabs{ display:flex; gap:4px; flex-wrap:wrap; }
   .tab-btn{
@@ -62,11 +73,18 @@
   .tab-btn.active{ color:var(--leaf); border-bottom-color:var(--leaf); }
 
   .sidebar{ padding: 22px 18px; border-right: 2px solid var(--line-strong); }
+  .sidebar-toggle{ display:none; width:100%; justify-content:space-between; align-items:center; padding:9px 12px; margin-bottom:12px; background:var(--paper-2); border:1px solid var(--line-strong); border-radius:4px; font-family:'Inter', sans-serif; font-weight:600; font-size:13.5px; color:var(--ink); cursor:pointer; }
+  @media (max-width: 780px){
+    .sidebar-toggle{ display:flex; }
+    .sidebar.collapsed #cropList, .sidebar.collapsed #treeList, .sidebar.collapsed .sidebar-label, .sidebar.collapsed .sidebar-search{ display:none !important; }
+  }
+  .sidebar-search{ width:100%; padding:8px 10px; margin-bottom:10px; border:1px solid var(--line-strong); border-radius:4px; background:var(--paper); font-size:13px; font-family:'Inter', sans-serif; color:var(--ink); }
   .sidebar-label{ font-family:'JetBrains Mono', monospace; font-size:11px; text-transform:uppercase; letter-spacing:1.5px; color:var(--soil); margin: 4px 4px 12px; }
   .crop-btn{ display:flex; align-items:center; gap:12px; width:100%; padding:9px 10px; margin-bottom:5px; background:transparent; border: 1px solid transparent; border-radius:4px; cursor:pointer; text-align:left; font-family:'Inter', sans-serif; font-size:14.5px; color: var(--ink); }
   .crop-btn:hover{ background: var(--paper-2); }
   .crop-btn.active{ background: var(--paper-2); border-color: var(--line-strong); }
-  .seal{ flex-shrink:0; width:32px; height:32px; border-radius:50%; border: 1.5px dashed var(--soil); display:flex; align-items:center; justify-content:center; font-family:'Fraunces', serif; font-style:italic; font-weight:600; font-size:13px; color:var(--rust); transform: rotate(-4deg); }
+  .seal{ flex-shrink:0; width:32px; height:32px; border-radius:50%; border: 1.5px dashed var(--soil); display:flex; align-items:center; justify-content:center; transform: rotate(-4deg); }
+  .seal svg{ width:19px; height:19px; }
   .dashboard-btn{ display:flex; align-items:center; gap:12px; width:100%; padding:9px 10px; margin-bottom:16px; background: var(--leaf); border:none; border-radius:4px; cursor:pointer; color:var(--paper); font-family:'Inter', sans-serif; font-weight:600; font-size:14px; }
   .dashboard-btn.inactive{ background:transparent; color:var(--leaf); border:1.5px solid var(--leaf); }
 
@@ -79,11 +97,15 @@
   .task-group.fertilize{ border-color: var(--marigold); }
   .task-group.spray{ border-color: var(--rust); }
   .task-group.harvest{ border-color: var(--soil); }
+  .task-group.prune{ border-color: var(--prune); }
+  .task-group.protect{ border-color: var(--frost); }
   .task-group h3{ font-family:'JetBrains Mono', monospace; text-transform:uppercase; letter-spacing:1px; font-size:12.5px; margin:0 0 8px; }
   .task-group.plant h3{ color:var(--leaf); }
   .task-group.fertilize h3{ color:var(--marigold); }
   .task-group.spray h3{ color:var(--rust); }
   .task-group.harvest h3{ color:var(--soil); }
+  .task-group.prune h3{ color:var(--prune); }
+  .task-group.protect h3{ color:var(--frost); }
   .task-row{ font-size:14.5px; line-height:1.5; margin-bottom:6px; display:flex; justify-content:space-between; gap:10px; align-items:center; }
   .empty-note{ font-size:14px; color: var(--soil); font-style:italic; font-family:'Fraunces', serif; }
 
@@ -94,7 +116,8 @@
   .ics-btn:hover{ background:var(--paper-2); }
 
   .crop-head{ display:flex; align-items:center; gap:18px; margin-bottom: 18px; }
-  .seal-lg{ width:64px; height:64px; border-radius:50%; border: 2px dashed var(--soil); display:flex; align-items:center; justify-content:center; font-family:'Fraunces', serif; font-style:italic; font-weight:600; font-size:22px; color:var(--rust); transform: rotate(-4deg); flex-shrink:0; }
+  .seal-lg{ width:64px; height:64px; border-radius:50%; border: 2px dashed var(--soil); display:flex; align-items:center; justify-content:center; transform: rotate(-4deg); flex-shrink:0; }
+  .seal-lg svg{ width:36px; height:36px; }
   .crop-head h2{ font-family:'Fraunces', serif; font-style:italic; font-size:30px; margin:0; color:var(--leaf); }
   .crop-family{ font-family:'JetBrains Mono', monospace; font-size:12px; color:var(--soil); }
 
@@ -108,6 +131,8 @@
   .dot.fertilize{ background:var(--marigold); }
   .dot.spray{ background:var(--rust); }
   .dot.harvest{ background:var(--soil); }
+  .dot.prune{ background:var(--prune); }
+  .dot.protect{ background:var(--frost); }
 
   .sections{ display:grid; grid-template-columns: 1fr 1fr; gap: 20px; }
   @media (max-width: 640px){ .sections{ grid-template-columns: 1fr; } }
@@ -117,9 +142,12 @@
   .section-card.fertilize h4{ color:var(--marigold); }
   .section-card.spray h4{ color:var(--rust); }
   .section-card.harvest h4{ color:var(--soil); }
+  .section-card.prune h4{ color:var(--prune); }
+  .section-card.protect h4{ color:var(--frost); }
   .section-card.rotation h4{ color:var(--sky); }
   .section-card.companions h4{ color:var(--leaf); }
   .section-card.watering h4{ color:var(--sky); }
+  .section-card.care h4{ color:var(--sky); }
   .section-card ul{ margin:0; padding-left:18px; }
   .section-card li{ font-size:13.5px; line-height:1.55; margin-bottom:8px; }
   .section-card p{ font-size:13.5px; line-height:1.55; margin:0 0 8px; }
@@ -186,6 +214,27 @@
   .problem-card .lbl{ font-family:'JetBrains Mono', monospace; font-size:10.5px; text-transform:uppercase; color:var(--soil); }
 
   .reminder-note{ font-size:12.5px; color:var(--soil); background:var(--paper-2); border:1px dashed var(--line-strong); border-radius:5px; padding:10px 14px; margin-bottom:20px; line-height:1.5; }
+
+  [data-theme="dark"]{
+    --paper: #1E231C;
+    --paper-2: #262C22;
+    --ink: #EAE6D8;
+    --leaf: #8FBF7A;
+    --leaf-light: #6B8F5E;
+    --marigold: #E3B23C;
+    --rust: #E0836A;
+    --soil: #C2A67E;
+    --sky: #86AEC2;
+    --prune: #C9A8DE;
+    --frost: #8FB4CC;
+    --line: #3A4034;
+    --line-strong: #4E5640;
+  }
+  [data-theme="dark"] body{ background-image: radial-gradient(circle at 1px 1px, rgba(234,230,216,0.05) 1px, transparent 0); }
+  [data-theme="dark"] .bed-warning.bad, [data-theme="dark"] .spray-advisory.warn{ background:#3E241D; }
+  [data-theme="dark"] .bed-warning.ok, [data-theme="dark"] .spray-advisory.good{ background:#22301B; }
+  [data-theme="dark"] .moon-visual{ background:#111; border-color:var(--line-strong); }
+  [data-theme="dark"] .moon-visual .lit{ background:#4a4a3a; }
 </style>
 </head>
 <body>
@@ -207,15 +256,23 @@
       <div class="month-picker">
         <label for="monthSel">Місяць:</label>
         <select id="monthSel"></select>
+        <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()">🌙 Темна тема</button>
       </div>
     </div>
     <div class="tabs" id="tabs"></div>
   </div>
 
   <div class="sidebar" id="sidebarEl">
+    <button class="sidebar-toggle" id="sidebarToggle" aria-expanded="true" onclick="toggleSidebarCollapse()">
+      <span id="sidebarToggleLabel">Сховати список</span><span id="sidebarToggleIcon">▴</span>
+    </button>
     <button class="dashboard-btn" id="dashBtn" onclick="showDashboard()">Завдання на місяць</button>
-    <div class="sidebar-label">Культури</div>
+    <div class="sidebar-label" id="cropsLabel">Культури</div>
+    <input class="sidebar-search" id="cropSearch" placeholder="Пошук культури…" oninput="filterList('crop', this.value)">
     <div id="cropList"></div>
+    <div class="sidebar-label" id="treesLabel" style="display:none;">Дерева</div>
+    <input class="sidebar-search" id="treeSearch" placeholder="Пошук дерева…" style="display:none;" oninput="filterList('tree', this.value)">
+    <div id="treeList" style="display:none;"></div>
   </div>
 
   <div class="main" id="main"></div>
@@ -224,7 +281,35 @@
 <script>
 const MONTHS = ['Січень','Лютий','Березень','Квітень','Травень','Червень','Липень','Серпень','Вересень','Жовтень','Листопад','Грудень'];
 const MONTHS_SHORT = ['січ','лют','бер','кві','тра','чер','лип','сер','вер','жов','лис','гру'];
-const TYPE_LABEL = {plant:'Садіння / висадка', fertilize:'Удобрення', spray:'Обприскування', harvest:'Збір врожаю'};
+const TYPE_LABEL = {plant:'Садіння / висадка', fertilize:'Удобрення', spray:'Обприскування', harvest:'Збір врожаю', prune:'Обрізка', protect:'Захист на зиму'};
+
+const ICONS = {
+  tomato: `<svg viewBox="0 0 24 24" fill="none" stroke="#3B5D33" stroke-width="1.5" stroke-linecap="round"><path d="M12 8c-3.2 0-5.8 2.4-5.8 6.2 0 3.4 2.6 6.2 5.8 6.2s5.8-2.8 5.8-6.2C17.8 10.4 15.2 8 12 8z" fill="#A8432E" stroke="none"/><path d="M12 8c.4-1.8 1.8-2.8 3.3-3"/><path d="M12 8c-.4-1.2-1.5-1.9-2.8-1.9"/></svg>`,
+  cucumber: `<svg viewBox="0 0 24 24" fill="none" stroke="#3B5D33" stroke-width="1.5" stroke-linecap="round"><path d="M4 13c0-2.5 2.8-5 8-5s8 2.5 8 5-2.8 5-8 5-8-2.5-8-5z" fill="#6B8F5E" stroke="none"/><path d="M12 8v10" stroke="#3B5D33" stroke-width="1" opacity=".4"/></svg>`,
+  pepper: `<svg viewBox="0 0 24 24" fill="none" stroke="#3B5D33" stroke-width="1.5" stroke-linecap="round"><path d="M12 4.5v3"/><path d="M9 8c-2.2 0-4 2.2-4 5.8 0 3.8 2.8 6.2 7 6.2s7-2.4 7-6.2C19 10.2 17.2 8 15 8c-1 0-1.3.9-3 .9S10 8 9 8z" fill="#A8432E" stroke="none"/></svg>`,
+  potato: `<svg viewBox="0 0 24 24" fill="none" stroke="#3B5D33" stroke-width="1.5"><ellipse cx="12" cy="13" rx="7" ry="5" fill="#C2A67E" stroke="none" transform="rotate(-12 12 13)"/><circle cx="9.5" cy="12" r="0.7" fill="#3B5D33" stroke="none"/><circle cx="14.5" cy="15" r="0.7" fill="#3B5D33" stroke="none"/></svg>`,
+  cabbage: `<svg viewBox="0 0 24 24" fill="none" stroke="#3B5D33" stroke-width="1.3"><circle cx="12" cy="13" r="7" fill="#6B8F5E" stroke="none"/><path d="M12 6.5c-2 2-2 5 0 7" stroke="#3B5D33" opacity=".5"/><path d="M12 6.5c2 2 2 5 0 7" stroke="#3B5D33" opacity=".5"/></svg>`,
+  carrot: `<svg viewBox="0 0 24 24" fill="none" stroke="#3B5D33" stroke-width="1.5" stroke-linecap="round"><path d="M9.5 8h5l-2 12.5h-1z" fill="#A8432E" stroke="none"/><path d="M12 8c-.8-2-2.6-3-4.5-3"/><path d="M12 8c.8-2 2.6-3 4.5-3"/></svg>`,
+  onion: `<svg viewBox="0 0 24 24" fill="none" stroke="#3B5D33" stroke-width="1.5" stroke-linecap="round"><path d="M12 20c-3 0-5-2.6-5-6s2-6.8 5-8.6c3 1.8 5 5.2 5 8.6s-2 6-5 6z" fill="#C98A2A" stroke="none"/><path d="M12 5.4V3"/></svg>`,
+  garlic: `<svg viewBox="0 0 24 24" fill="none" stroke="#3B5D33" stroke-width="1.2" stroke-linecap="round"><path d="M12 20c-3 0-5-2-5-4.8S9 8 12 6c3 2 5 6.4 5 9.2S15 20 12 20z" fill="#EEE8D6" stroke="none"/><path d="M12 6.5v13" opacity=".5"/><path d="M9.5 8.5v9.5" opacity=".5"/><path d="M14.5 8.5v9.5" opacity=".5"/></svg>`,
+  strawberry: `<svg viewBox="0 0 24 24" fill="none" stroke="#3B5D33" stroke-width="1.4" stroke-linecap="round"><path d="M12 20c-3.6 0-5.8-3.4-5.8-6.6C6.2 10.5 8.6 8.5 12 8.5s5.8 2 5.8 4.9c0 3.2-2.2 6.6-5.8 6.6z" fill="#A8432E" stroke="none"/><path d="M9 8.2l1.2-1.9M12 8v-2M15 8.2l-1.2-1.9"/><circle cx="10.2" cy="13" r=".5" fill="#EEE8D6" stroke="none"/><circle cx="13.8" cy="13" r=".5" fill="#EEE8D6" stroke="none"/><circle cx="12" cy="16" r=".5" fill="#EEE8D6" stroke="none"/></svg>`,
+  beet: `<svg viewBox="0 0 24 24" fill="none" stroke="#3B5D33" stroke-width="1.5" stroke-linecap="round"><path d="M12 6.5c3 0 5 2.6 5 6s-2 6-5 6-5-2.6-5-6 2-6 5-6z" fill="#A8432E" stroke="none"/><path d="M12 18.5V21"/><path d="M9 6.5c0-1 1-1.8 3-1.8"/><path d="M15 6.5c0-1-1-1.8-3-1.8"/></svg>`
+};
+
+function treeIconSvg(fruitColor, dual){
+  const fruit = dual
+    ? `<circle cx="10" cy="10" r="1.3" fill="${fruitColor}" stroke="none"/><circle cx="13.4" cy="9.4" r="1.3" fill="${fruitColor}" stroke="none"/>`
+    : `<circle cx="12" cy="10" r="1.6" fill="${fruitColor}" stroke="none"/>`;
+  return `<svg viewBox="0 0 24 24" fill="none" stroke="#3B5D33" stroke-width="1.5" stroke-linecap="round"><path d="M12 21v-6.5"/><circle cx="12" cy="10" r="6.2" fill="#6B8F5E" stroke="#3B5D33"/>${fruit}</svg>`;
+}
+const TREE_ICONS = {
+  apple: treeIconSvg('#A8432E', false),
+  pear: treeIconSvg('#C98A2A', false),
+  plum: treeIconSvg('#6B4C7A', false),
+  cherry: treeIconSvg('#A8432E', true),
+  apricot: treeIconSvg('#D9A441', false),
+  walnut: treeIconSvg('#7A5B3A', false)
+};
 
 const crops = [
   { id:'tomato', name:'Томати', seal:'То', family:'Пасльонові',
@@ -344,6 +429,87 @@ const crops = [
     ]}
 ];
 
+const trees = [
+  { id:'apple', name:'Яблуня', seal:'Яб',
+    care:[{stage:'Молоде дерево (1–3 роки)', note:'Полив регулярний у посуху, 2–3 відра на тиждень, приствольне коло тримати без бур’янів'}, {stage:'Доросле дерево', note:'Полив лише в тривалу посуху, кореневій системі вистачає природної вологи'}],
+    tasks:[
+      {type:'plant', months:[10], label:'Осіннє садіння саджанців (до заморозків)'},
+      {type:'plant', months:[4], label:'Весняне садіння саджанців (за потреби)'},
+      {type:'prune', months:[3], label:'Формуюча та санітарна обрізка до початку сокоруху'},
+      {type:'fertilize', months:[4], label:'Азотне добриво навесні для росту пагонів'},
+      {type:'fertilize', months:[6,7], label:'Калійно-фосфорне підживлення в період наливу плодів'},
+      {type:'fertilize', months:[9], label:'Фосфорно-калійне добриво під зиму після збору врожаю'},
+      {type:'spray', months:[3], label:'Викорінюючий обприскування (мідний купорос/бордоська рідина) до розпускання бруньок'},
+      {type:'spray', months:[4,5], label:'Проти парші та квіткоїда під час і після цвітіння'},
+      {type:'spray', months:[6,7], label:'Проти яблуневої плодожерки кожні 2–3 тижні'},
+      {type:'protect', months:[10,11], label:'Побілка стовбура і захист від гризунів та морозобоїн на зиму'},
+      {type:'harvest', months:[8,9,10], label:'Збір врожаю (залежно від сорту)'}
+    ]},
+  { id:'pear', name:'Груша', seal:'Гр',
+    care:[{stage:'Молоде дерево', note:'Полив регулярний, груша чутливіша до пересихання ґрунту, ніж яблуня'}, {stage:'Доросле дерево', note:'Полив у посушливі періоди, особливо під час наливу плодів'}],
+    tasks:[
+      {type:'plant', months:[10], label:'Осіннє садіння саджанців'},
+      {type:'plant', months:[4], label:'Весняне садіння саджанців (за потреби)'},
+      {type:'prune', months:[3], label:'Формуюча та санітарна обрізка'},
+      {type:'fertilize', months:[4], label:'Азотне добриво навесні'},
+      {type:'fertilize', months:[7], label:'Калійно-фосфорне підживлення в період плодоношення'},
+      {type:'fertilize', months:[9], label:'Фосфорно-калійне добриво після збору врожаю'},
+      {type:'spray', months:[3], label:'Викорінюючий обприскування до розпускання бруньок'},
+      {type:'spray', months:[4,5], label:'Проти парші груші під час цвітіння та після'},
+      {type:'spray', months:[6,7], label:'Проти грушевої плодожерки та листоблішки'},
+      {type:'protect', months:[10,11], label:'Побілка стовбура та захист від гризунів'},
+      {type:'harvest', months:[8,9], label:'Збір врожаю'}
+    ]},
+  { id:'plum', name:'Слива', seal:'Сл',
+    care:[{stage:'Молоде дерево', note:'Регулярний полив перші 2–3 роки, слива не любить перезволоження'}, {stage:'Доросле дерево', note:'Полив у посуху, надлишок вологи може викликати розтріскування плодів'}],
+    tasks:[
+      {type:'plant', months:[4], label:'Весняне садіння саджанців (краще, ніж осіннє через ризик підмерзання)'},
+      {type:'prune', months:[3], label:'Санітарна та формуюча обрізка'},
+      {type:'fertilize', months:[4], label:'Азотне добриво навесні'},
+      {type:'fertilize', months:[7], label:'Калійно-фосфорне підживлення в період наливу плодів'},
+      {type:'spray', months:[3], label:'Викорінюючий обприскування до розпускання бруньок'},
+      {type:'spray', months:[4,5], label:'Проти сливової попелиці та плодожерки'},
+      {type:'protect', months:[10,11], label:'Побілка стовбура, захист від морозобоїн'},
+      {type:'harvest', months:[8,9], label:'Збір врожаю'}
+    ]},
+  { id:'cherry', name:'Вишня і черешня', seal:'Вш',
+    care:[{stage:'Молоде дерево', note:'Полив помірний, кореневій системі шкодить застій води'}, {stage:'Доросле дерево', note:'Полив у посуху, зменшити за 2–3 тижні до збору для кращого смаку плодів'}],
+    tasks:[
+      {type:'plant', months:[4], label:'Весняне садіння саджанців'},
+      {type:'prune', months:[3], label:'Формуюча обрізка до розпускання бруньок'},
+      {type:'prune', months:[7], label:'Легка обрізка після збору врожаю (для черешні)'},
+      {type:'fertilize', months:[4], label:'Азотне добриво навесні'},
+      {type:'fertilize', months:[7], label:'Калійно-фосфорне підживлення після плодоношення'},
+      {type:'spray', months:[3], label:'Викорінюючий обприскування до розпускання бруньок'},
+      {type:'spray', months:[5], label:'Проти вишневої мухи та коккоміко за потреби'},
+      {type:'protect', months:[10,11], label:'Побілка стовбура, захист від гризунів'},
+      {type:'harvest', months:[6,7], label:'Збір врожаю'}
+    ]},
+  { id:'apricot', name:'Абрикос', seal:'Аб',
+    care:[{stage:'Молоде дерево', note:'Полив помірний, абрикос погано переносить перезволоження'}, {stage:'Доросле дерево', note:'Полив рідкий, лише в сильну посуху; ранньою весною чутливий до підмерзання квіткових бруньок'}],
+    tasks:[
+      {type:'plant', months:[4], label:'Весняне садіння саджанців'},
+      {type:'prune', months:[3], label:'Формуюча та санітарна обрізка'},
+      {type:'fertilize', months:[4], label:'Азотне добриво навесні'},
+      {type:'fertilize', months:[6], label:'Калійно-фосфорне підживлення в період наливу плодів'},
+      {type:'spray', months:[3], label:'Викорінюючий обприскування до розпускання бруньок'},
+      {type:'spray', months:[4], label:'Проти моніліозу мідьвмісними препаратами під час і після цвітіння'},
+      {type:'protect', months:[3], label:'Побілка стовбура навесні — знижує ризик опіків кори через ранній вихід із спокою'},
+      {type:'protect', months:[10,11], label:'Осіння побілка та захист від гризунів'},
+      {type:'harvest', months:[7], label:'Збір врожаю'}
+    ]},
+  { id:'walnut', name:'Горіх волоський', seal:'Гх',
+    care:[{stage:'Молоде дерево (1–4 роки)', note:'Полив регулярний перші роки для формування глибокої кореневої системи'}, {stage:'Доросле дерево', note:'Практично не потребує поливу — коріння сягає глибоких шарів ґрунту'}],
+    tasks:[
+      {type:'plant', months:[10], label:'Осіннє садіння саджанців'},
+      {type:'prune', months:[2], label:'Мінімальна санітарна обрізка — тільки суху деревину (горіх погано переносить сильну обрізку)'},
+      {type:'fertilize', months:[4], label:'Азотне добриво навесні для молодих дерев'},
+      {type:'spray', months:[5], label:'Проти горіхової плодожерки за потреби (доросле дерево зазвичай обходиться без обробок)'},
+      {type:'protect', months:[10,11], label:'Побілка стовбура молодих дерев'},
+      {type:'harvest', months:[9], label:'Збір врожаю після розтріскування зеленої оболонки'}
+    ]}
+];
+
 const problems = [
   {symptom:'Жовтіють нижні листки', cause:'Найчастіше нестача азоту або перезволоження грунту', action:'Перевірте дренаж, за потреби підживіть азотним добривом'},
   {symptom:'Білий борошнистий наліт на листі', cause:'Борошниста роса (грибкове захворювання)', action:'Обробити фунгіцидом або розчином соди/сироватки, покращити провітрювання посадок'},
@@ -358,6 +524,7 @@ const problems = [
 
 let currentMonth = new Date().getMonth() + 1;
 let activeCrop = null;
+let activeTree = null;
 let currentView = 'overview';
 
 const monthSel = document.getElementById('monthSel');
@@ -370,10 +537,12 @@ MONTHS.forEach((m,i)=>{
 monthSel.addEventListener('change', e=>{
   currentMonth = parseInt(e.target.value);
   if(currentView==='overview'){ if(activeCrop===null) renderDashboard(); else renderCrop(activeCrop); }
+  if(currentView==='trees'){ if(activeTree===null) renderTreeDashboard(); else renderTree(activeTree); }
 });
 
 const TABS = [
   {id:'overview', label:'Огляд'},
+  {id:'trees', label:'Дерева'},
   {id:'rotation', label:'Сівозміна'},
   {id:'weather', label:'Погода'},
   {id:'moon', label:'Фаза Місяця'},
@@ -386,19 +555,38 @@ function buildTabs(){
     b.className = 'tab-btn' + (t.id===currentView ? ' active' : '');
     b.id = 'tab-'+t.id;
     b.textContent = t.label;
+    b.setAttribute('aria-current', t.id===currentView ? 'page' : 'false');
     b.onclick = ()=> setView(t.id);
     el.appendChild(b);
   });
 }
 function setView(view){
   currentView = view;
-  TABS.forEach(t=> document.getElementById('tab-'+t.id).className = 'tab-btn' + (t.id===view?' active':''));
+  TABS.forEach(t=>{
+    const b = document.getElementById('tab-'+t.id);
+    b.className = 'tab-btn' + (t.id===view?' active':'');
+    b.setAttribute('aria-current', t.id===view ? 'page' : 'false');
+  });
   const sidebar = document.getElementById('sidebarEl');
   const app = document.getElementById('appRoot');
-  if(view==='overview'){
+  const cropList = document.getElementById('cropList');
+  const treeList = document.getElementById('treeList');
+  const cropsLabel = document.getElementById('cropsLabel');
+  const treesLabel = document.getElementById('treesLabel');
+  const cropSearch = document.getElementById('cropSearch');
+  const treeSearch = document.getElementById('treeSearch');
+  if(view==='overview' || view==='trees'){
     sidebar.style.display = '';
     app.classList.remove('wide');
-    if(activeCrop===null) renderDashboard(); else renderCrop(activeCrop);
+    const showTrees = view==='trees';
+    cropList.style.display = showTrees ? 'none' : '';
+    cropsLabel.style.display = showTrees ? 'none' : '';
+    cropSearch.style.display = showTrees ? 'none' : '';
+    treeList.style.display = showTrees ? '' : 'none';
+    treesLabel.style.display = showTrees ? '' : 'none';
+    treeSearch.style.display = showTrees ? '' : 'none';
+    if(showTrees){ if(activeTree===null) renderTreeDashboard(); else renderTree(activeTree); }
+    else { if(activeCrop===null) renderDashboard(); else renderCrop(activeCrop); }
   } else {
     sidebar.style.display = 'none';
     app.classList.add('wide');
@@ -415,19 +603,87 @@ function buildCropList(){
     const btn = document.createElement('button');
     btn.className = 'crop-btn';
     btn.id = 'crop-'+c.id;
-    btn.innerHTML = `<span class="seal">${c.seal}</span><span>${c.name}</span>`;
+    btn.innerHTML = `<span class="seal">${ICONS[c.id]}</span><span>${c.name}</span>`;
     btn.onclick = ()=> selectCrop(c.id);
     list.appendChild(btn);
   });
 }
-function setActiveButtons(){
-  document.getElementById('dashBtn').className = activeCrop===null ? 'dashboard-btn' : 'dashboard-btn inactive';
-  crops.forEach(c=>{
-    document.getElementById('crop-'+c.id).className = 'crop-btn' + (activeCrop===c.id ? ' active' : '');
+function buildTreeList(){
+  const list = document.getElementById('treeList');
+  trees.forEach(t=>{
+    const btn = document.createElement('button');
+    btn.className = 'crop-btn';
+    btn.id = 'tree-'+t.id;
+    btn.innerHTML = `<span class="seal">${TREE_ICONS[t.id]}</span><span>${t.name}</span>`;
+    btn.onclick = ()=> selectTree(t.id);
+    list.appendChild(btn);
   });
 }
-function showDashboard(){ activeCrop = null; setActiveButtons(); renderDashboard(); }
+function setActiveButtons(){
+  document.getElementById('dashBtn').className = (activeCrop===null && activeTree===null) ? 'dashboard-btn' : 'dashboard-btn inactive';
+  crops.forEach(c=>{
+    const el = document.getElementById('crop-'+c.id);
+    el.className = 'crop-btn' + (activeCrop===c.id ? ' active' : '');
+    el.setAttribute('aria-current', activeCrop===c.id ? 'true' : 'false');
+  });
+  trees.forEach(t=>{
+    const el = document.getElementById('tree-'+t.id);
+    el.className = 'crop-btn' + (activeTree===t.id ? ' active' : '');
+    el.setAttribute('aria-current', activeTree===t.id ? 'true' : 'false');
+  });
+}
+function showDashboard(){
+  if(currentView==='trees'){ activeTree = null; setActiveButtons(); renderTreeDashboard(); }
+  else { activeCrop = null; setActiveButtons(); renderDashboard(); }
+}
 function selectCrop(id){ activeCrop = id; setActiveButtons(); renderCrop(id); }
+function selectTree(id){ activeTree = id; setActiveButtons(); renderTree(id); }
+
+function filterList(kind, query){
+  const q = query.trim().toLowerCase();
+  const prefix = kind==='crop' ? 'crop-' : 'tree-';
+  const items = kind==='crop' ? crops : trees;
+  items.forEach(item=>{
+    const el = document.getElementById(prefix+item.id);
+    el.style.display = item.name.toLowerCase().includes(q) ? '' : 'none';
+  });
+}
+
+function toggleSidebarCollapse(){
+  const sidebar = document.getElementById('sidebarEl');
+  const collapsed = sidebar.classList.toggle('collapsed');
+  document.getElementById('sidebarToggleLabel').textContent = collapsed ? 'Показати список' : 'Сховати список';
+  document.getElementById('sidebarToggleIcon').textContent = collapsed ? '▾' : '▴';
+  document.getElementById('sidebarToggle').setAttribute('aria-expanded', String(!collapsed));
+}
+function initSidebarToggle(){
+  if(window.matchMedia('(max-width: 780px)').matches){
+    document.getElementById('sidebarEl').classList.add('collapsed');
+    document.getElementById('sidebarToggleLabel').textContent = 'Показати список';
+    document.getElementById('sidebarToggleIcon').textContent = '▾';
+    document.getElementById('sidebarToggle').setAttribute('aria-expanded', 'false');
+  }
+}
+
+function applyTheme(theme){
+  document.documentElement.setAttribute('data-theme', theme);
+  const btn = document.getElementById('themeToggle');
+  if(btn) btn.textContent = theme==='dark' ? '☀️ Світла тема' : '🌙 Темна тема';
+}
+async function initTheme(){
+  let theme = 'light';
+  try{
+    const res = await window.storage.get('theme');
+    if(res && res.value) theme = res.value;
+  } catch(e){ /* no saved preference yet */ }
+  applyTheme(theme);
+}
+async function toggleTheme(){
+  const current = document.documentElement.getAttribute('data-theme') || 'light';
+  const next = current==='dark' ? 'light' : 'dark';
+  applyTheme(next);
+  try{ await window.storage.set('theme', next); } catch(e){ console.error('storage error', e); }
+}
 
 function makeIcs(cropName, taskLabel, months){
   const year = new Date().getFullYear();
@@ -530,8 +786,85 @@ function renderCrop(id){
 
   main.innerHTML = `
     <div class="crop-head">
-      <div class="seal-lg">${c.seal}</div>
+      <div class="seal-lg">${ICONS[c.id]}</div>
       <div><h2>${c.name}</h2><div class="crop-family">${c.family}</div></div>
+    </div>
+    ${legend}
+    ${timelineHtml}
+    ${sectionsHtml}
+  `;
+}
+
+const TREE_TYPE_ORDER = ['plant','prune','fertilize','spray','protect','harvest'];
+
+function renderTreeDashboard(){
+  const main = document.getElementById('main');
+  const groups = {plant:[], prune:[], fertilize:[], spray:[], protect:[], harvest:[]};
+  trees.forEach(t=>{
+    t.tasks.forEach(task=>{
+      if(task.months.includes(currentMonth)) groups[task.type].push({tree:t.name, label:task.label, months:task.months});
+    });
+  });
+  let html = `<div class="dash-title">${MONTHS[currentMonth-1]}: догляд за деревами</div>
+  <p class="dash-sub">Зведення завдань по плодових деревах на цей місяць</p>
+  <div class="reminder-note">Дати орієнтовні для середньої смуги України — звіряйтесь з погодою (вкладка «Погода») перед обприскуванням і обрізкою по морозу.</div>`;
+
+  TREE_TYPE_ORDER.forEach(type=>{
+    html += `<div class="task-group ${type}"><h3>${TYPE_LABEL[type]}</h3>`;
+    if(groups[type].length===0){
+      html += `<div class="empty-note">Немає запланованих завдань цього типу цього місяця</div>`;
+    } else {
+      groups[type].forEach(item=>{
+        html += `<div class="task-row"><span><b>${item.tree}</b> — ${item.label}</span><button class="ics-btn" onclick='makeIcs(${JSON.stringify(item.tree)}, ${JSON.stringify(item.label)}, ${JSON.stringify(item.months)})'>+ у календар</button></div>`;
+      });
+    }
+    html += `</div>`;
+  });
+  main.innerHTML = html;
+}
+
+function renderTree(id){
+  const t = trees.find(x=>x.id===id);
+  const main = document.getElementById('main');
+
+  let timelineHtml = '<div class="timeline">';
+  for(let m=1; m<=12; m++){
+    const dots = [...new Set(t.tasks.filter(task=>task.months.includes(m)).map(task=>task.type))];
+    timelineHtml += `<div class="tl-cell"><span class="tl-label">${MONTHS_SHORT[m-1]}</span><div class="tl-dots">`;
+    dots.forEach(type=>{ timelineHtml += `<span class="dot ${type}"></span>`; });
+    timelineHtml += `</div></div>`;
+  }
+  timelineHtml += '</div>';
+
+  const legend = `<div class="legend">
+    <span><span class="dot plant"></span> Садіння</span>
+    <span><span class="dot prune"></span> Обрізка</span>
+    <span><span class="dot fertilize"></span> Удобрення</span>
+    <span><span class="dot spray"></span> Обприскування</span>
+    <span><span class="dot protect"></span> Захист на зиму</span>
+    <span><span class="dot harvest"></span> Збір врожаю</span>
+  </div>`;
+
+  let sectionsHtml = '<div class="sections">';
+  TREE_TYPE_ORDER.forEach(type=>{
+    const items = t.tasks.filter(task=>task.type===type);
+    if(items.length===0) return;
+    sectionsHtml += `<div class="section-card ${type}"><h4>${TYPE_LABEL[type]}</h4><ul>`;
+    items.forEach(task=>{
+      const monthsStr = task.months.map(m=>MONTHS_SHORT[m-1]).join(', ');
+      sectionsHtml += `<li>${task.label}<br><span class="months-tag">${monthsStr}</span></li>`;
+    });
+    sectionsHtml += `</ul></div>`;
+  });
+  sectionsHtml += `<div class="section-card care"><h4>Полив і догляд</h4><ul>`;
+  t.care.forEach(w=>{ sectionsHtml += `<li><b>${w.stage}:</b> ${w.note}</li>`; });
+  sectionsHtml += `</ul></div>`;
+  sectionsHtml += '</div>';
+
+  main.innerHTML = `
+    <div class="crop-head">
+      <div class="seal-lg">${TREE_ICONS[t.id]}</div>
+      <h2>${t.name}</h2>
     </div>
     ${legend}
     ${timelineHtml}
@@ -780,8 +1113,11 @@ function renderProblems(filter){
 
 buildTabs();
 buildCropList();
+buildTreeList();
 setActiveButtons();
 renderDashboard();
+initSidebarToggle();
+initTheme();
 </script>
 </body>
 </html>
