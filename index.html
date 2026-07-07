@@ -144,9 +144,17 @@
   .rotation-rules th, .rotation-rules td{ text-align:left; padding:8px 10px; border-bottom:1px solid var(--line); }
   .rotation-rules th{ font-family:'JetBrains Mono', monospace; text-transform:uppercase; font-size:11px; color:var(--soil); }
 
-  .weather-search{ display:flex; gap:8px; margin-bottom:20px; }
-  .weather-search input{ flex:1; padding:9px 12px; border:1px solid var(--line-strong); border-radius:4px; font-size:14px; background:var(--paper-2); }
-  .weather-search button{ padding:9px 16px; background:var(--sky); color:white; border:none; border-radius:4px; font-weight:600; cursor:pointer; }
+  .weather-search{ display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap; }
+  .weather-search input{ flex:1; min-width:160px; padding:9px 12px; border:1px solid var(--line-strong); border-radius:4px; font-size:14px; background:var(--paper-2); }
+  .weather-search button{ padding:9px 16px; background:var(--sky); color:white; border:none; border-radius:4px; font-weight:600; cursor:pointer; white-space:nowrap; }
+  .geo-btn{ background:var(--leaf) !important; }
+  .candidate-list{ background:var(--paper-2); border:1px solid var(--line-strong); border-radius:6px; padding:6px; margin-bottom:20px; }
+  .candidate-item{ display:block; width:100%; text-align:left; padding:10px 12px; background:transparent; border:none; border-bottom:1px solid var(--line); cursor:pointer; font-family:'Inter',sans-serif; font-size:14px; color:var(--ink); }
+  .candidate-item:last-child{ border-bottom:none; }
+  .candidate-item:hover{ background:var(--paper); }
+  .candidate-item b{ display:block; font-size:14.5px; }
+  .candidate-item span{ font-size:12px; color:var(--soil); font-family:'JetBrains Mono', monospace; }
+  .candidate-hint{ font-size:12.5px; color:var(--soil); margin:0 0 20px; font-style:italic; }
   .weather-card{ background:var(--paper-2); border:1px solid var(--line-strong); border-radius:6px; padding:22px; }
   .weather-now{ display:flex; align-items:baseline; gap:14px; margin-bottom:16px; }
   .weather-now .temp{ font-family:'Fraunces', serif; font-style:italic; font-size:48px; color:var(--sky); }
@@ -615,25 +623,68 @@ function setBedYear(id, year, cropId){
   saveBeds(); drawBeds();
 }
 
-async function renderWeather(city){
-  city = city || 'Київ';
+function renderWeather(prefillCity){
   const main = document.getElementById('main');
   main.innerHTML = `<div class="dash-title">Погода для городу</div>
   <p class="dash-sub">Прогноз опадів допомагає обрати правильний день для обприскування та поливу</p>
   <div class="weather-search">
-    <input id="citySearch" value="${city}" placeholder="Назва міста">
-    <button onclick="renderWeather(document.getElementById('citySearch').value)">Показати</button>
+    <input id="citySearch" value="${prefillCity || ''}" placeholder="Назва населеного пункту" onkeydown="if(event.key==='Enter') searchCity(document.getElementById('citySearch').value)">
+    <button onclick="searchCity(document.getElementById('citySearch').value)">Знайти</button>
+    <button class="geo-btn" onclick="useMyLocation()">📍 Визначити моє місцезнаходження</button>
   </div>
-  <div class="weather-card" id="weatherResult">Завантаження прогнозу…</div>`;
+  <div id="weatherResult">${prefillCity ? '' : '<div class="candidate-hint">Однакових назв населених пунктів може бути кілька — введіть назву і оберіть потрібний зі списку (видно область і країну), або натисніть «Визначити моє місцезнаходження», щоб уникнути плутанини взагалі.</div>'}</div>`;
+  if(prefillCity) searchCity(prefillCity);
+}
 
+async function searchCity(city){
+  if(!city) return;
+  const result = document.getElementById('weatherResult');
+  result.innerHTML = 'Шукаю населені пункти…';
   try{
-    const geoRes = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1&language=uk&format=json`);
+    const geoRes = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=8&language=uk&format=json`);
     const geo = await geoRes.json();
     if(!geo.results || geo.results.length===0){
-      document.getElementById('weatherResult').innerHTML = 'Місто не знайдено. Спробуйте іншу назву.';
+      result.innerHTML = 'Нічого не знайдено. Спробуйте іншу назву або додайте область (напр. «Іванівка, Вінницька область»).';
       return;
     }
-    const {latitude, longitude, name} = geo.results[0];
+    if(geo.results.length === 1){
+      loadWeatherAt(geo.results[0].latitude, geo.results[0].longitude, describePlace(geo.results[0]));
+      return;
+    }
+    let html = `<div class="candidate-hint">Знайдено кілька збігів — оберіть свій населений пункт:</div><div class="candidate-list">`;
+    geo.results.forEach((r,i)=>{
+      html += `<button class="candidate-item" onclick='loadWeatherAt(${r.latitude}, ${r.longitude}, ${JSON.stringify(describePlace(r))})'>
+        <b>${r.name}</b><span>${[r.admin2, r.admin1, r.country].filter(Boolean).join(', ')} · ${r.latitude.toFixed(2)}, ${r.longitude.toFixed(2)}</span>
+      </button>`;
+    });
+    html += `</div>`;
+    result.innerHTML = html;
+  } catch(e){
+    result.innerHTML = 'Не вдалося виконати пошук. Перевірте з’єднання і спробуйте ще раз.';
+  }
+}
+
+function describePlace(r){
+  return [r.name, r.admin1, r.country].filter(Boolean).join(', ');
+}
+
+function useMyLocation(){
+  const result = document.getElementById('weatherResult');
+  if(!navigator.geolocation){
+    result.innerHTML = 'Ваш браузер не підтримує визначення місцезнаходження. Скористайтесь пошуком за назвою.';
+    return;
+  }
+  result.innerHTML = 'Визначаю ваше місцезнаходження…';
+  navigator.geolocation.getCurrentPosition(
+    pos => loadWeatherAt(pos.coords.latitude, pos.coords.longitude, 'ваше поточне місцезнаходження'),
+    err => { result.innerHTML = 'Не вдалося отримати місцезнаходження (можливо, доступ заборонено в браузері). Скористайтесь пошуком за назвою.'; }
+  );
+}
+
+async function loadWeatherAt(latitude, longitude, label){
+  const result = document.getElementById('weatherResult');
+  result.innerHTML = 'Завантаження прогнозу…';
+  try{
     const wRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,precipitation,relative_humidity_2m&daily=precipitation_sum,temperature_2m_max,temperature_2m_min&timezone=auto&forecast_days=5`);
     const w = await wRes.json();
     const cur = w.current;
@@ -642,8 +693,8 @@ async function renderWeather(city){
     let daysHtml = '';
     for(let i=0;i<daily.time.length;i++){
       const d = new Date(daily.time[i]);
-      const label = i===0 ? 'Сьогодні' : d.toLocaleDateString('uk-UA', {weekday:'short'});
-      daysHtml += `<div class="wday"><div class="wd-label">${label}</div><div class="wd-temp">${Math.round(daily.temperature_2m_min[i])}° / ${Math.round(daily.temperature_2m_max[i])}°</div><div class="wd-rain">опади: ${daily.precipitation_sum[i]} мм</div></div>`;
+      const dayLabel = i===0 ? 'Сьогодні' : d.toLocaleDateString('uk-UA', {weekday:'short'});
+      daysHtml += `<div class="wday"><div class="wd-label">${dayLabel}</div><div class="wd-temp">${Math.round(daily.temperature_2m_min[i])}° / ${Math.round(daily.temperature_2m_max[i])}°</div><div class="wd-rain">опади: ${daily.precipitation_sum[i]} мм</div></div>`;
     }
 
     const tomorrowRain = daily.precipitation_sum[1] || 0;
@@ -655,16 +706,18 @@ async function renderWeather(city){
       advisory = `<div class="spray-advisory good">Опадів найближчим часом не очікується — гарний момент для обприскування.</div>`;
     }
 
-    document.getElementById('weatherResult').innerHTML = `
-      <div class="weather-now">
-        <div class="temp">${Math.round(cur.temperature_2m)}°C</div>
-        <div class="desc">${name} · вологість повітря ${cur.relative_humidity_2m}% · опади зараз: ${cur.precipitation} мм</div>
+    result.innerHTML = `
+      <div class="weather-card">
+        <div class="weather-now">
+          <div class="temp">${Math.round(cur.temperature_2m)}°C</div>
+          <div class="desc">${label} · вологість повітря ${cur.relative_humidity_2m}% · опади зараз: ${cur.precipitation} мм</div>
+        </div>
+        <div class="weather-days">${daysHtml}</div>
+        ${advisory}
       </div>
-      <div class="weather-days">${daysHtml}</div>
-      ${advisory}
     `;
   } catch(e){
-    document.getElementById('weatherResult').innerHTML = 'Не вдалося завантажити прогноз погоди. Перевірте з’єднання і спробуйте ще раз.';
+    result.innerHTML = 'Не вдалося завантажити прогноз погоди. Перевірте з’єднання і спробуйте ще раз.';
   }
 }
 
