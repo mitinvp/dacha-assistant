@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Щоденник дачника</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,500;1,9..144,600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper: #EEE8D6;
+    --paper-2: #E4DCC4;
+    --ink: #232B1E;
+    --leaf: #3B5D33;
+    --leaf-light: #6B8F5E;
+    --marigold: #C98A2A;
+    --rust: #A8432E;
+    --soil: #7A5B3A;
+    --sky: #4A6B7A;
+    --line: #C7BC9C;
+    --line-strong: #A79A72;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Inter', sans-serif;
+    background-image: radial-gradient(circle at 1px 1px, rgba(35,43,30,0.06) 1px, transparent 0);
+    background-size: 14px 14px;
+  }
+  .app{
+    max-width:1180px;
+    margin:0 auto;
+    display:grid;
+    grid-template-columns: 250px 1fr;
+    min-height:100vh;
+  }
+  .app.wide{ grid-template-columns: 1fr; }
+  @media (max-width: 780px){ .app{grid-template-columns: 1fr;} }
+
+  .header{
+    grid-column: 1 / -1;
+    padding: 24px 28px 0;
+    border-bottom: 2px solid var(--line-strong);
+  }
+  .header-top{
+    display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:14px;
+    padding-bottom:16px;
+  }
+  .brand{ display:flex; align-items:center; gap:14px; }
+  .brand h1{ font-family:'Fraunces', serif; font-style: italic; font-weight:600; font-size: 30px; margin:0; letter-spacing:-0.5px; color: var(--leaf); }
+  .brand p{ margin:2px 0 0; font-size:13px; color: var(--soil); }
+  .month-picker{ display:flex; align-items:center; gap:8px; font-family:'JetBrains Mono', monospace; font-size:13px; }
+  .month-picker select{ font-family:'JetBrains Mono', monospace; font-size:13px; padding:7px 10px; background: var(--paper-2); border:1px solid var(--line-strong); border-radius:3px; color:var(--ink); }
+
+  .tabs{ display:flex; gap:4px; flex-wrap:wrap; }
+  .tab-btn{
+    padding:9px 14px; background:transparent; border:none; border-bottom:3px solid transparent;
+    font-family:'Inter', sans-serif; font-weight:600; font-size:13.5px; color:var(--soil); cursor:pointer;
+  }
+  .tab-btn.active{ color:var(--leaf); border-bottom-color:var(--leaf); }
+
+  .sidebar{ padding: 22px 18px; border-right: 2px solid var(--line-strong); }
+  .sidebar-label{ font-family:'JetBrains Mono', monospace; font-size:11px; text-transform:uppercase; letter-spacing:1.5px; color:var(--soil); margin: 4px 4px 12px; }
+  .crop-btn{ display:flex; align-items:center; gap:12px; width:100%; padding:9px 10px; margin-bottom:5px; background:transparent; border: 1px solid transparent; border-radius:4px; cursor:pointer; text-align:left; font-family:'Inter', sans-serif; font-size:14.5px; color: var(--ink); }
+  .crop-btn:hover{ background: var(--paper-2); }
+  .crop-btn.active{ background: var(--paper-2); border-color: var(--line-strong); }
+  .seal{ flex-shrink:0; width:32px; height:32px; border-radius:50%; border: 1.5px dashed var(--soil); display:flex; align-items:center; justify-content:center; font-family:'Fraunces', serif; font-style:italic; font-weight:600; font-size:13px; color:var(--rust); transform: rotate(-4deg); }
+  .dashboard-btn{ display:flex; align-items:center; gap:12px; width:100%; padding:9px 10px; margin-bottom:16px; background: var(--leaf); border:none; border-radius:4px; cursor:pointer; color:var(--paper); font-family:'Inter', sans-serif; font-weight:600; font-size:14px; }
+  .dashboard-btn.inactive{ background:transparent; color:var(--leaf); border:1.5px solid var(--leaf); }
+
+  .main{ padding: 26px 32px 60px; }
+  .dash-title{ font-family:'Fraunces', serif; font-style:italic; font-size:26px; margin: 0 0 4px; }
+  .dash-sub{ font-size:13px; color:var(--soil); margin:0 0 22px; }
+
+  .task-group{ margin-bottom: 22px; border-left: 4px solid var(--line-strong); padding-left: 16px; }
+  .task-group.plant{ border-color: var(--leaf); }
+  .task-group.fertilize{ border-color: var(--marigold); }
+  .task-group.spray{ border-color: var(--rust); }
+  .task-group.harvest{ border-color: var(--soil); }
+  .task-group h3{ font-family:'JetBrains Mono', monospace; text-transform:uppercase; letter-spacing:1px; font-size:12.5px; margin:0 0 8px; }
+  .task-group.plant h3{ color:var(--leaf); }
+  .task-group.fertilize h3{ color:var(--marigold); }
+  .task-group.spray h3{ color:var(--rust); }
+  .task-group.harvest h3{ color:var(--soil); }
+  .task-row{ font-size:14.5px; line-height:1.5; margin-bottom:6px; display:flex; justify-content:space-between; gap:10px; align-items:center; }
+  .empty-note{ font-size:14px; color: var(--soil); font-style:italic; font-family:'Fraunces', serif; }
+
+  .ics-btn{
+    font-family:'JetBrains Mono', monospace; font-size:11px; padding:4px 9px; background:var(--paper); border:1px solid var(--line-strong);
+    border-radius:3px; cursor:pointer; color:var(--soil); white-space:nowrap;
+  }
+  .ics-btn:hover{ background:var(--paper-2); }
+
+  .crop-head{ display:flex; align-items:center; gap:18px; margin-bottom: 18px; }
+  .seal-lg{ width:64px; height:64px; border-radius:50%; border: 2px dashed var(--soil); display:flex; align-items:center; justify-content:center; font-family:'Fraunces', serif; font-style:italic; font-weight:600; font-size:22px; color:var(--rust); transform: rotate(-4deg); flex-shrink:0; }
+  .crop-head h2{ font-family:'Fraunces', serif; font-style:italic; font-size:30px; margin:0; color:var(--leaf); }
+  .crop-family{ font-family:'JetBrains Mono', monospace; font-size:12px; color:var(--soil); }
+
+  .timeline{ display:grid; grid-template-columns: repeat(12, 1fr); border:1.5px solid var(--line-strong); border-radius:4px; overflow:hidden; margin-bottom: 22px; }
+  .tl-cell{ border-right:1px solid var(--line); padding: 8px 4px 10px; text-align:center; background: var(--paper); }
+  .tl-cell:last-child{ border-right:none; }
+  .tl-cell .tl-label{ font-family:'JetBrains Mono', monospace; font-size:10.5px; color:var(--soil); display:block; margin-bottom:6px; }
+  .tl-dots{ display:flex; justify-content:center; gap:3px; flex-wrap:wrap; }
+  .dot{ width:7px; height:7px; border-radius:50%; }
+  .dot.plant{ background:var(--leaf); }
+  .dot.fertilize{ background:var(--marigold); }
+  .dot.spray{ background:var(--rust); }
+  .dot.harvest{ background:var(--soil); }
+
+  .sections{ display:grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media (max-width: 640px){ .sections{ grid-template-columns: 1fr; } }
+  .section-card{ background: var(--paper-2); border:1px solid var(--line-strong); border-radius:6px; padding:16px 18px; }
+  .section-card h4{ font-family:'JetBrains Mono', monospace; text-transform:uppercase; font-size:12px; letter-spacing:1px; margin:0 0 10px; }
+  .section-card.plant h4{ color:var(--leaf); }
+  .section-card.fertilize h4{ color:var(--marigold); }
+  .section-card.spray h4{ color:var(--rust); }
+  .section-card.harvest h4{ color:var(--soil); }
+  .section-card.rotation h4{ color:var(--sky); }
+  .section-card.companions h4{ color:var(--leaf); }
+  .section-card.watering h4{ color:var(--sky); }
+  .section-card ul{ margin:0; padding-left:18px; }
+  .section-card li{ font-size:13.5px; line-height:1.55; margin-bottom:8px; }
+  .section-card p{ font-size:13.5px; line-height:1.55; margin:0 0 8px; }
+  .months-tag{ font-family:'JetBrains Mono', monospace; font-size:11px; color:var(--soil); }
+  .tag-pill{ display:inline-block; font-size:12px; background:var(--paper); border:1px solid var(--line-strong); border-radius:12px; padding:2px 9px; margin:2px 4px 2px 0; }
+
+  .legend{ display:flex; gap:16px; flex-wrap:wrap; font-size:12px; color:var(--soil); margin-bottom:18px; }
+
+  .bed-card{ background:var(--paper-2); border:1px solid var(--line-strong); border-radius:6px; padding:16px 18px; margin-bottom:16px; }
+  .bed-head{ display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
+  .bed-head input{ font-family:'Fraunces', serif; font-style:italic; font-size:18px; border:none; background:transparent; color:var(--leaf); border-bottom:1px dashed var(--line-strong); padding:2px 0; }
+  .bed-years{ display:grid; grid-template-columns: repeat(3, 1fr); gap:10px; }
+  .bed-years label{ font-family:'JetBrains Mono', monospace; font-size:11px; color:var(--soil); display:block; margin-bottom:4px; }
+  .bed-years select{ width:100%; padding:6px; border:1px solid var(--line-strong); border-radius:3px; background:var(--paper); font-size:13px; }
+  .bed-warning{ margin-top:10px; padding:8px 10px; border-radius:4px; font-size:13px; }
+  .bed-warning.bad{ background:#F0DBD3; color:var(--rust); border:1px solid var(--rust); }
+  .bed-warning.ok{ background:#DDE7D5; color:var(--leaf); border:1px solid var(--leaf); }
+  .remove-bed{ font-family:'JetBrains Mono', monospace; font-size:11px; color:var(--rust); background:none; border:none; cursor:pointer; }
+  .add-bed-btn{ padding:8px 14px; background:var(--leaf); color:var(--paper); border:none; border-radius:4px; font-family:'Inter'; font-weight:600; cursor:pointer; font-size:13.5px; }
+  .rotation-rules{ margin-top:24px; }
+  .rotation-rules table{ width:100%; border-collapse:collapse; font-size:13px; }
+  .rotation-rules th, .rotation-rules td{ text-align:left; padding:8px 10px; border-bottom:1px solid var(--line); }
+  .rotation-rules th{ font-family:'JetBrains Mono', monospace; text-transform:uppercase; font-size:11px; color:var(--soil); }
+
+  .weather-search{ display:flex; gap:8px; margin-bottom:20px; }
+  .weather-search input{ flex:1; padding:9px 12px; border:1px solid var(--line-strong); border-radius:4px; font-size:14px; background:var(--paper-2); }
+  .weather-search button{ padding:9px 16px; background:var(--sky); color:white; border:none; border-radius:4px; font-weight:600; cursor:pointer; }
+  .weather-card{ background:var(--paper-2); border:1px solid var(--line-strong); border-radius:6px; padding:22px; }
+  .weather-now{ display:flex; align-items:baseline; gap:14px; margin-bottom:16px; }
+  .weather-now .temp{ font-family:'Fraunces', serif; font-style:italic; font-size:48px; color:var(--sky); }
+  .weather-now .desc{ font-size:14px; color:var(--soil); }
+  .weather-days{ display:grid; grid-template-columns: repeat(auto-fit, minmax(90px,1fr)); gap:10px; margin-top:14px; }
+  .wday{ text-align:center; background:var(--paper); border:1px solid var(--line); border-radius:4px; padding:10px 6px; }
+  .wday .wd-label{ font-family:'JetBrains Mono', monospace; font-size:11px; color:var(--soil); }
+  .wday .wd-temp{ font-size:15px; margin:6px 0 2px; font-weight:600;}
+  .wday .wd-rain{ font-size:11px; color:var(--sky); }
+  .spray-advisory{ margin-top:18px; padding:12px 14px; border-radius:5px; font-size:13.5px; }
+  .spray-advisory.warn{ background:#F0DBD3; border:1px solid var(--rust); color:var(--rust); }
+  .spray-advisory.good{ background:#DDE7D5; border:1px solid var(--leaf); color:var(--leaf); }
+
+  .moon-card{ display:flex; gap:26px; align-items:center; background:var(--paper-2); border:1px solid var(--line-strong); border-radius:6px; padding:24px; flex-wrap:wrap; }
+  .moon-visual{ width:90px; height:90px; border-radius:50%; background:#2b2b2b; position:relative; overflow:hidden; flex-shrink:0; border:1px solid var(--line-strong); }
+  .moon-visual .lit{ position:absolute; top:0; height:100%; background:#EFE6C8; }
+  .moon-info h3{ font-family:'Fraunces', serif; font-style:italic; margin:0 0 6px; font-size:22px; color:var(--leaf); }
+  .moon-info p{ font-size:13.5px; line-height:1.6; margin:0 0 6px; max-width:560px; }
+  .moon-disclaimer{ font-size:11.5px; color:var(--soil); font-style:italic; margin-top:10px; }
+  .moon-table{ margin-top:22px; width:100%; border-collapse:collapse; font-size:13px; }
+  .moon-table th, .moon-table td{ text-align:left; padding:8px 10px; border-bottom:1px solid var(--line); }
+  .moon-table th{ font-family:'JetBrains Mono', monospace; text-transform:uppercase; font-size:11px; color:var(--soil); }
+
+  .problem-search{ margin-bottom:18px; }
+  .problem-search input{ width:100%; padding:10px 14px; border:1px solid var(--line-strong); border-radius:4px; font-size:14px; background:var(--paper-2); }
+  .problem-card{ background:var(--paper-2); border-left:4px solid var(--rust); border-radius:0 6px 6px 0; padding:14px 18px; margin-bottom:12px; }
+  .problem-card h4{ margin:0 0 6px; font-size:15px; font-family:'Fraunces', serif; font-style:italic; color:var(--rust); }
+  .problem-card p{ margin:3px 0; font-size:13.5px; line-height:1.5; }
+  .problem-card .lbl{ font-family:'JetBrains Mono', monospace; font-size:10.5px; text-transform:uppercase; color:var(--soil); }
+
+  .reminder-note{ font-size:12.5px; color:var(--soil); background:var(--paper-2); border:1px dashed var(--line-strong); border-radius:5px; padding:10px 14px; margin-bottom:20px; line-height:1.5; }
+</style>
+</head>
+<body>
+<div class="app" id="appRoot">
+  <div class="header">
+    <div class="header-top">
+      <div class="brand">
+        <svg width="38" height="38" viewBox="0 0 40 40" fill="none">
+          <path d="M20 36C20 36 8 29 8 17C8 10 13 5 20 5C27 5 32 10 32 17C32 29 20 36 20 36Z" stroke="#3B5D33" stroke-width="2"/>
+          <path d="M20 34V12" stroke="#3B5D33" stroke-width="2" stroke-linecap="round"/>
+          <path d="M20 18C20 18 14 16 14 11" stroke="#6B8F5E" stroke-width="2" stroke-linecap="round"/>
+          <path d="M20 24C20 24 26 22 26 17" stroke="#6B8F5E" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        <div>
+          <h1>Щоденник дачника</h1>
+          <p>Що садити, чим підживити, від чого обприскати</p>
+        </div>
+      </div>
+      <div class="month-picker">
+        <label for="monthSel">Місяць:</label>
+        <select id="monthSel"></select>
+      </div>
+    </div>
+    <div class="tabs" id="tabs"></div>
+  </div>
+
+  <div class="sidebar" id="sidebarEl">
+    <button class="dashboard-btn" id="dashBtn" onclick="showDashboard()">Завдання на місяць</button>
+    <div class="sidebar-label">Культури</div>
+    <div id="cropList"></div>
+  </div>
+
+  <div class="main" id="main"></div>
+</div>
+
+<script>
+const MONTHS = ['Січень','Лютий','Березень','Квітень','Травень','Червень','Липень','Серпень','Вересень','Жовтень','Листопад','Грудень'];
+const MONTHS_SHORT = ['січ','лют','бер','кві','тра','чер','лип','сер','вер','жов','лис','гру'];
+const TYPE_LABEL = {plant:'Садіння / висадка', fertilize:'Удобрення', spray:'Обприскування', harvest:'Збір врожаю'};
+
+const crops = [
+  { id:'tomato', name:'Томати', seal:'То', family:'Пасльонові',
+    rotationGood:'Найкращі попередники: капуста, огірки, бобові, цибуля', rotationBad:'Не садити після картоплі, перцю, баклажанів чи самих томатів — витримати 3 роки',
+    companions:['базилік','чорнобривці','цибуля'], avoid:['картопля','кріп у надлишку'],
+    watering:[{stage:'До цвітіння', note:'Помірний, 1 раз на 3–4 дні, 5–7 л/кущ'}, {stage:'Цвітіння і плодоношення', note:'Регулярний, 2–3 рази/тиждень, 7–10 л/кущ, уникати потрапляння на листя'}],
+    tasks:[
+      {type:'plant', months:[3], label:'Посів насіння на розсаду'},
+      {type:'plant', months:[5], label:'Висадка розсади в теплицю або грунт'},
+      {type:'fertilize', months:[5,6], label:'Азотне добриво (настій кропиви) через 2 тижні після висадки'},
+      {type:'fertilize', months:[6,7,8], label:'Калійно-фосфорне добриво в період цвітіння та плодоношення'},
+      {type:'spray', months:[6,7,8], label:'Мідьвмісні препарати проти фітофтори кожні 10–14 днів у вологу погоду'},
+      {type:'spray', months:[6,7], label:'Обробка проти колорадського жука та попелиці за потреби'},
+      {type:'harvest', months:[7,8,9], label:'Збір врожаю'}
+    ]},
+  { id:'cucumber', name:'Огірки', seal:'Ог', family:'Гарбузові',
+    rotationGood:'Попередники: капуста, цибуля, бобові, томати', rotationBad:'Не після кабачків, гарбуза, дині — витримати 3 роки',
+    companions:['кукурудза','квасоля','кріп'], avoid:['картопля'],
+    watering:[{stage:'Проростання', note:'Часто, легкий полив теплою водою'}, {stage:'Плодоношення', note:'Щодня або через день, 15–20 л/м², не пересушувати'}],
+    tasks:[
+      {type:'plant', months:[5], label:'Посів у грунт або висадка розсади'},
+      {type:'fertilize', months:[6], label:'Настій коров’яку або азотне добриво на початку росту'},
+      {type:'fertilize', months:[7,8], label:'Калійне підживлення у період плодоношення'},
+      {type:'spray', months:[6,7,8], label:'Проти борошнистої роси — сироватка або фунгіцид'},
+      {type:'harvest', months:[7,8,9], label:'Регулярний збір, щоб стимулювати нові зав’язі'}
+    ]},
+  { id:'pepper', name:'Перець', seal:'Пц', family:'Пасльонові',
+    rotationGood:'Попередники: капуста, огірки, цибуля, бобові', rotationBad:'Не після томатів, картоплі, баклажанів — витримати 3–4 роки',
+    companions:['базилік','цибуля'], avoid:['фенхель'],
+    watering:[{stage:'Після висадки', note:'Регулярний, невеликими порціями, грунт не пересушувати'}, {stage:'Плодоношення', note:'2 рази/тиждень, 5–8 л/кущ'}],
+    tasks:[
+      {type:'plant', months:[2,3], label:'Посів на розсаду (потребує довгого вирощування)'},
+      {type:'plant', months:[5], label:'Висадка розсади в теплицю або грунт'},
+      {type:'fertilize', months:[5,6], label:'Азотне добриво через 2 тижні після висадки'},
+      {type:'fertilize', months:[7,8], label:'Калійно-фосфорне добриво під час плодоношення'},
+      {type:'spray', months:[6,7], label:'Проти попелиці та павутинного кліща за потреби'},
+      {type:'harvest', months:[7,8,9], label:'Збір врожаю'}
+    ]},
+  { id:'potato', name:'Картопля', seal:'Кт', family:'Пасльонові',
+    rotationGood:'Попередники: капуста, огірки, бобові, зернові сидерати', rotationBad:'Не після томатів, перцю, самої картоплі — витримати 3–4 роки',
+    companions:['квасоля','кукурудза'], avoid:['соняшник','огірки поруч (спільні хвороби)'],
+    watering:[{stage:'До цвітіння', note:'Помірний, без надлишку'}, {stage:'Бутонізація-цвітіння', note:'Найважливіший період поливу, 20–30 л/м² щотижня'}],
+    tasks:[
+      {type:'plant', months:[4,5], label:'Садіння бульб'},
+      {type:'fertilize', months:[5], label:'Перегній або комплексне добриво під час садіння'},
+      {type:'fertilize', months:[6], label:'Підгортання з підживленням золою'},
+      {type:'spray', months:[6,7], label:'Проти колорадського жука'},
+      {type:'spray', months:[7,8], label:'Проти фітофтори мідьвмісними препаратами у вологу погоду'},
+      {type:'harvest', months:[8,9], label:'Збір врожаю'}
+    ]},
+  { id:'cabbage', name:'Капуста', seal:'Кп', family:'Капустяні (хрестоцвіті)',
+    rotationGood:'Попередники: бобові, цибуля, картопля', rotationBad:'Не після редьки, редиски, іншої капусти — витримати 3–4 роки',
+    companions:['кріп','цибуля','селера'], avoid:['томати поруч'],
+    watering:[{stage:'Після висадки', note:'Щоденно перші 2 тижні'}, {stage:'Формування качана', note:'Рясний, 2 рази/тиждень, 15–20 л/м²'}],
+    tasks:[
+      {type:'plant', months:[3,4], label:'Посів на розсаду'},
+      {type:'plant', months:[5], label:'Висадка розсади у грунт'},
+      {type:'fertilize', months:[5,6], label:'Азотне добриво для нарощування листя'},
+      {type:'fertilize', months:[7], label:'Калійне добриво під час формування качана'},
+      {type:'spray', months:[5,6,7], label:'Проти капустяної білянки та слимаків'},
+      {type:'harvest', months:[8,9,10], label:'Збір врожаю (залежно від сорту)'}
+    ]},
+  { id:'carrot', name:'Морква', seal:'Мр', family:'Зонтичні (селерові)',
+    rotationGood:'Попередники: цибуля, огірки, картопля, капуста', rotationBad:'Не після петрушки, кропу, селери — витримати 3 роки',
+    companions:['цибуля','розмарин'], avoid:['кріп поруч'],
+    watering:[{stage:'Проростання', note:'Легкий, часто, грунт не повинен пересихати'}, {stage:'Ріст коренеплоду', note:'Помірний, 1 раз/тиждень, 10 л/м²'}],
+    tasks:[
+      {type:'plant', months:[4,5], label:'Посів насіння в грунт'},
+      {type:'fertilize', months:[6], label:'Помірне калійно-фосфорне підживлення (без надлишку азоту)'},
+      {type:'spray', months:[6,7], label:'Проти морквяної мухи за потреби'},
+      {type:'harvest', months:[9,10], label:'Збір врожаю'}
+    ]},
+  { id:'onion', name:'Цибуля', seal:'Цб', family:'Цибулеві',
+    rotationGood:'Попередники: капуста, огірки, бобові', rotationBad:'Не після часнику, іншої цибулі — витримати 3–4 роки',
+    companions:['морква','буряк'], avoid:['бобові поруч'],
+    watering:[{stage:'Ріст пера', note:'Регулярний, 1–2 рази/тиждень'}, {stage:'Визрівання цибулини', note:'Полив припинити за 2–3 тижні до збору'}],
+    tasks:[
+      {type:'plant', months:[4], label:'Садіння сіянки або сівба в грунт'},
+      {type:'fertilize', months:[5], label:'Азотне підживлення на початку росту'},
+      {type:'fertilize', months:[6], label:'Калійно-фосфорне підживлення для визрівання цибулин'},
+      {type:'spray', months:[6], label:'Проти пероноспорозу у вологу погоду'},
+      {type:'harvest', months:[7,8], label:'Збір врожаю після вилягання пера'}
+    ]},
+  { id:'garlic', name:'Часник', seal:'Чс', family:'Цибулеві',
+    rotationGood:'Попередники: капуста, огірки, бобові, сидерати', rotationBad:'Не після цибулі, самого часнику — витримати 3–4 роки',
+    companions:['полуниця','морква'], avoid:['бобові поруч'],
+    watering:[{stage:'Весняний ріст', note:'Помірний, 1 раз/тиждень'}, {stage:'Перед збором', note:'Припинити за 2–3 тижні до викопування'}],
+    tasks:[
+      {type:'plant', months:[10], label:'Садіння озимого часнику'},
+      {type:'plant', months:[4], label:'Садіння ярого часнику (за потреби)'},
+      {type:'fertilize', months:[4], label:'Азотне підживлення навесні після відновлення росту'},
+      {type:'fertilize', months:[5,6], label:'Калійно-фосфорне підживлення перед формуванням голівки'},
+      {type:'spray', months:[5], label:'Проти фузаріозу та шкідників за потреби'},
+      {type:'harvest', months:[7], label:'Збір врожаю озимого часнику'}
+    ]},
+  { id:'strawberry', name:'Полуниця', seal:'Пл', family:'Розові (багаторічна)',
+    rotationGood:'Нову грядку розбивати після бобових, цибулі, часнику', rotationBad:'Не після картоплі, томатів (спільні хвороби в’янення)',
+    companions:['часник','цибуля','буряк'], avoid:['капуста поруч'],
+    watering:[{stage:'Цвітіння', note:'Помірний, уникати попадання на квіти'}, {stage:'Плодоношення', note:'Регулярний, 10–15 л/м², краплинний полив ідеальний'}],
+    tasks:[
+      {type:'plant', months:[4,8,9], label:'Садіння розсади (навесні або в серпні–вересні)'},
+      {type:'fertilize', months:[4], label:'Азотне підживлення навесні'},
+      {type:'fertilize', months:[5], label:'Калійно-фосфорне добриво перед цвітінням'},
+      {type:'fertilize', months:[8], label:'Підживлення після плодоношення для закладки бруньок'},
+      {type:'spray', months:[4,5], label:'Проти сірої гнилі та довгоносика'},
+      {type:'harvest', months:[6,7], label:'Збір врожаю'}
+    ]},
+  { id:'beet', name:'Буряк', seal:'Бр', family:'Лободові (амарантові)',
+    rotationGood:'Попередники: огірки, картопля, цибуля', rotationBad:'Не після шпинату, мангольду — витримати 2–3 роки',
+    companions:['цибуля','капуста'], avoid:['квасоля поруч'],
+    watering:[{stage:'Проростання', note:'Легкий, регулярний'}, {stage:'Ріст коренеплоду', note:'1 раз/тиждень, 10–15 л/м²'}],
+    tasks:[
+      {type:'plant', months:[5], label:'Посів насіння в грунт'},
+      {type:'fertilize', months:[6,7], label:'Калійно-фосфорне підживлення (буряк любить калій)'},
+      {type:'spray', months:[6], label:'Проти церкоспорозу за потреби'},
+      {type:'harvest', months:[9,10], label:'Збір врожаю'}
+    ]}
+];
+
+const problems = [
+  {symptom:'Жовтіють нижні листки', cause:'Найчастіше нестача азоту або перезволоження грунту', action:'Перевірте дренаж, за потреби підживіть азотним добривом'},
+  {symptom:'Білий борошнистий наліт на листі', cause:'Борошниста роса (грибкове захворювання)', action:'Обробити фунгіцидом або розчином соди/сироватки, покращити провітрювання посадок'},
+  {symptom:'Дірки в листі', cause:'Гусениці, жуки або слимаки', action:'Ручний збір шкідників, інсектицид або народні засоби (зола, настій полину)'},
+  {symptom:'Темні плями з жовтим ободком на листі томатів/картоплі', cause:'Фітофтороз', action:'Видалити уражені частини, обробити мідьвмісним препаратом, скоротити полив по листю'},
+  {symptom:'Скручені верхівки пагонів, липкий наліт', cause:'Попелиця', action:'Змити водою, обробити мильним розчином або інсектицидом, залучити сонечок'},
+  {symptom:'Чорна пляма-гниль на нижній частині плоду томата', cause:'Вершинна гниль — нестача кальцію через нерівномірний полив', action:'Стабілізувати графік поливу, підживити кальцієвою селітрою'},
+  {symptom:'В’януть рослини попри вологий грунт', cause:'Фузаріозне або вертицильозне в’янення (грибок у корінні)', action:'Видалити хвору рослину, не садити ту саму культуру на цьому місці 3–4 роки'},
+  {symptom:'Тонка павутинка на листі, дрібні світлі цятки', cause:'Павутинний кліщ', action:'Підвищити вологість повітря, обробити акарицидом'},
+  {symptom:'Плоди деформовані або дрібні', cause:'Нестача поживних речовин, погане запилення або спека', action:'Збалансувати підживлення, забезпечити регулярний полив у спекотні дні'}
+];
+
+let currentMonth = new Date().getMonth() + 1;
+let activeCrop = null;
+let currentView = 'overview';
+
+const monthSel = document.getElementById('monthSel');
+MONTHS.forEach((m,i)=>{
+  const opt = document.createElement('option');
+  opt.value = i+1; opt.textContent = m;
+  if(i+1===currentMonth) opt.selected = true;
+  monthSel.appendChild(opt);
+});
+monthSel.addEventListener('change', e=>{
+  currentMonth = parseInt(e.target.value);
+  if(currentView==='overview'){ if(activeCrop===null) renderDashboard(); else renderCrop(activeCrop); }
+});
+
+const TABS = [
+  {id:'overview', label:'Огляд'},
+  {id:'rotation', label:'Сівозміна'},
+  {id:'weather', label:'Погода'},
+  {id:'moon', label:'Фаза Місяця'},
+  {id:'problems', label:'Проблеми'}
+];
+function buildTabs(){
+  const el = document.getElementById('tabs');
+  TABS.forEach(t=>{
+    const b = document.createElement('button');
+    b.className = 'tab-btn' + (t.id===currentView ? ' active' : '');
+    b.id = 'tab-'+t.id;
+    b.textContent = t.label;
+    b.onclick = ()=> setView(t.id);
+    el.appendChild(b);
+  });
+}
+function setView(view){
+  currentView = view;
+  TABS.forEach(t=> document.getElementById('tab-'+t.id).className = 'tab-btn' + (t.id===view?' active':''));
+  const sidebar = document.getElementById('sidebarEl');
+  const app = document.getElementById('appRoot');
+  if(view==='overview'){
+    sidebar.style.display = '';
+    app.classList.remove('wide');
+    if(activeCrop===null) renderDashboard(); else renderCrop(activeCrop);
+  } else {
+    sidebar.style.display = 'none';
+    app.classList.add('wide');
+    if(view==='rotation') renderRotation();
+    if(view==='weather') renderWeather();
+    if(view==='moon') renderMoon();
+    if(view==='problems') renderProblems();
+  }
+}
+
+function buildCropList(){
+  const list = document.getElementById('cropList');
+  crops.forEach(c=>{
+    const btn = document.createElement('button');
+    btn.className = 'crop-btn';
+    btn.id = 'crop-'+c.id;
+    btn.innerHTML = `<span class="seal">${c.seal}</span><span>${c.name}</span>`;
+    btn.onclick = ()=> selectCrop(c.id);
+    list.appendChild(btn);
+  });
+}
+function setActiveButtons(){
+  document.getElementById('dashBtn').className = activeCrop===null ? 'dashboard-btn' : 'dashboard-btn inactive';
+  crops.forEach(c=>{
+    document.getElementById('crop-'+c.id).className = 'crop-btn' + (activeCrop===c.id ? ' active' : '');
+  });
+}
+function showDashboard(){ activeCrop = null; setActiveButtons(); renderDashboard(); }
+function selectCrop(id){ activeCrop = id; setActiveButtons(); renderCrop(id); }
+
+function makeIcs(cropName, taskLabel, months){
+  const year = new Date().getFullYear();
+  const month = months[0];
+  const dt = new Date(year, month-1, 10, 9, 0);
+  const pad = n => String(n).padStart(2,'0');
+  const fmt = d => `${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}T${pad(d.getHours())}${pad(d.getMinutes())}00`;
+  const uid = Math.random().toString(36).slice(2) + '@dacha-diary';
+  const ics = `BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Shchodennyk Dachnyka//UK
+BEGIN:VEVENT
+UID:${uid}
+DTSTAMP:${fmt(new Date())}
+DTSTART:${fmt(dt)}
+SUMMARY:${cropName}: ${taskLabel}
+DESCRIPTION:Нагадування зі Щоденника дачника
+BEGIN:VALARM
+TRIGGER:-P1D
+ACTION:DISPLAY
+DESCRIPTION:Завтра: ${cropName} — ${taskLabel}
+END:VALARM
+END:VEVENT
+END:VCALENDAR`;
+  const blob = new Blob([ics], {type:'text/calendar'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'nagaduvannya.ics';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function renderDashboard(){
+  const main = document.getElementById('main');
+  const groups = {plant:[], fertilize:[], spray:[], harvest:[]};
+  crops.forEach(c=>{
+    c.tasks.forEach(t=>{
+      if(t.months.includes(currentMonth)) groups[t.type].push({crop:c.name, label:t.label, months:t.months});
+    });
+  });
+  let html = `<div class="dash-title">${MONTHS[currentMonth-1]}: що робити на ділянці</div>
+  <p class="dash-sub">Зведення завдань по всіх культурах на цей місяць</p>
+  <div class="reminder-note">Немає push-сповіщень чи email — цей файл працює офлайн у браузері й не має власного сервера, який міг би їх надсилати. Натомість для кожного завдання можна одразу завантажити файл .ics — імпортуйте його в Google/Apple/Outlook календар, і календар сам нагадає за день наперед.</div>`;
+
+  ['plant','fertilize','spray','harvest'].forEach(type=>{
+    html += `<div class="task-group ${type}"><h3>${TYPE_LABEL[type]}</h3>`;
+    if(groups[type].length===0){
+      html += `<div class="empty-note">Немає запланованих завдань цього типу цього місяця</div>`;
+    } else {
+      groups[type].forEach((item,i)=>{
+        html += `<div class="task-row"><span><b>${item.crop}</b> — ${item.label}</span><button class="ics-btn" onclick='makeIcs(${JSON.stringify(item.crop)}, ${JSON.stringify(item.label)}, ${JSON.stringify(item.months)})'>+ у календар</button></div>`;
+      });
+    }
+    html += `</div>`;
+  });
+  main.innerHTML = html;
+}
+
+function renderCrop(id){
+  const c = crops.find(x=>x.id===id);
+  const main = document.getElementById('main');
+
+  let timelineHtml = '<div class="timeline">';
+  for(let m=1; m<=12; m++){
+    const dots = [...new Set(c.tasks.filter(t=>t.months.includes(m)).map(t=>t.type))];
+    timelineHtml += `<div class="tl-cell"><span class="tl-label">${MONTHS_SHORT[m-1]}</span><div class="tl-dots">`;
+    dots.forEach(type=>{ timelineHtml += `<span class="dot ${type}"></span>`; });
+    timelineHtml += `</div></div>`;
+  }
+  timelineHtml += '</div>';
+
+  const legend = `<div class="legend">
+    <span><span class="dot plant"></span> Садіння</span>
+    <span><span class="dot fertilize"></span> Удобрення</span>
+    <span><span class="dot spray"></span> Обприскування</span>
+    <span><span class="dot harvest"></span> Збір врожаю</span>
+  </div>`;
+
+  let sectionsHtml = '<div class="sections">';
+  ['plant','fertilize','spray','harvest'].forEach(type=>{
+    const items = c.tasks.filter(t=>t.type===type);
+    sectionsHtml += `<div class="section-card ${type}"><h4>${TYPE_LABEL[type]}</h4><ul>`;
+    items.forEach(t=>{
+      const monthsStr = t.months.map(m=>MONTHS_SHORT[m-1]).join(', ');
+      sectionsHtml += `<li>${t.label}<br><span class="months-tag">${monthsStr}</span></li>`;
+    });
+    sectionsHtml += `</ul></div>`;
+  });
+  sectionsHtml += `<div class="section-card rotation"><h4>Сівозміна</h4>
+    <p><b>Родина:</b> ${c.family}</p>
+    <p>${c.rotationGood}</p>
+    <p>${c.rotationBad}</p></div>`;
+  sectionsHtml += `<div class="section-card companions"><h4>Сусідство на грядці</h4>
+    <p><b>Добре поруч:</b> ${c.companions.map(x=>`<span class="tag-pill">${x}</span>`).join('')}</p>
+    <p><b>Уникати поруч:</b> ${c.avoid.map(x=>`<span class="tag-pill">${x}</span>`).join('')}</p></div>`;
+  sectionsHtml += `<div class="section-card watering"><h4>Норми поливу</h4><ul>`;
+  c.watering.forEach(w=>{ sectionsHtml += `<li><b>${w.stage}:</b> ${w.note}</li>`; });
+  sectionsHtml += `</ul></div>`;
+  sectionsHtml += '</div>';
+
+  main.innerHTML = `
+    <div class="crop-head">
+      <div class="seal-lg">${c.seal}</div>
+      <div><h2>${c.name}</h2><div class="crop-family">${c.family}</div></div>
+    </div>
+    ${legend}
+    ${timelineHtml}
+    ${sectionsHtml}
+  `;
+}
+
+let beds = [];
+async function loadBeds(){
+  try{
+    const res = await window.storage.get('beds');
+    beds = res ? JSON.parse(res.value) : [];
+  } catch(e){ beds = []; }
+  if(beds.length===0){
+    beds = [{id:'b1', name:'Грядка 1', assignments:{}}];
+  }
+}
+async function saveBeds(){
+  try{ await window.storage.set('beds', JSON.stringify(beds)); } catch(e){ console.error('storage error', e); }
+}
+function familyOf(cropId){
+  const c = crops.find(x=>x.id===cropId);
+  return c ? c.family : null;
+}
+async function renderRotation(){
+  const main = document.getElementById('main');
+  main.innerHTML = `<div class="dash-title">Сівозміна по грядках</div>
+  <p class="dash-sub">Позначте, що росло на кожній грядці попередні роки — і побачите, чи безпечно садити туди обрану культуру зараз. Дані зберігаються особисто для вас.</p>
+  <div id="bedsContainer">Завантаження…</div>
+  <button class="add-bed-btn" onclick="addBed()">+ Додати грядку</button>
+  <div class="rotation-rules">
+    <div class="dash-title" style="font-size:19px;">Родини культур і базові правила</div>
+    <table><thead><tr><th>Культура</th><th>Родина</th><th>Не садити після</th></tr></thead><tbody>
+    ${crops.map(c=>`<tr><td>${c.name}</td><td>${c.family}</td><td>${c.rotationBad}</td></tr>`).join('')}
+    </tbody></table>
+  </div>`;
+  await loadBeds();
+  drawBeds();
+}
+function drawBeds(){
+  const cont = document.getElementById('bedsContainer');
+  const year = new Date().getFullYear();
+  const years = [year-2, year-1, year];
+  let html = '';
+  beds.forEach(bed=>{
+    html += `<div class="bed-card">
+      <div class="bed-head">
+        <input value="${bed.name}" onchange="renameBed('${bed.id}', this.value)">
+        <button class="remove-bed" onclick="removeBed('${bed.id}')">видалити грядку</button>
+      </div>
+      <div class="bed-years">`;
+    years.forEach(y=>{
+      html += `<div><label>${y}${y===year ? ' (цей рік)':''}</label>
+        <select onchange="setBedYear('${bed.id}', ${y}, this.value)">
+          <option value="">— не садив(ла) —</option>
+          ${crops.map(c=>`<option value="${c.id}" ${bed.assignments[y]===c.id?'selected':''}>${c.name}</option>`).join('')}
+        </select></div>`;
+    });
+    html += `</div>`;
+    const currentCrop = bed.assignments[year];
+    if(currentCrop){
+      const currentFamily = familyOf(currentCrop);
+      const conflictYear = years.filter(y=>y!==year).find(y=> bed.assignments[y] && familyOf(bed.assignments[y])===currentFamily);
+      if(conflictYear){
+        html += `<div class="bed-warning bad">На цій грядці у ${conflictYear} році вже росла культура тієї ж родини (${currentFamily}). Краще обрати іншу грядку або іншу культуру цього року.</div>`;
+      } else {
+        html += `<div class="bed-warning ok">Родина культур не повторюється за останні роки — можна садити.</div>`;
+      }
+    }
+    html += `</div>`;
+  });
+  cont.innerHTML = html;
+}
+function addBed(){
+  beds.push({id:'b'+Date.now(), name:'Грядка '+(beds.length+1), assignments:{}});
+  saveBeds(); drawBeds();
+}
+function removeBed(id){
+  beds = beds.filter(b=>b.id!==id);
+  saveBeds(); drawBeds();
+}
+function renameBed(id, name){
+  const b = beds.find(x=>x.id===id); if(b) b.name = name;
+  saveBeds();
+}
+function setBedYear(id, year, cropId){
+  const b = beds.find(x=>x.id===id); if(!b) return;
+  if(cropId) b.assignments[year] = cropId; else delete b.assignments[year];
+  saveBeds(); drawBeds();
+}
+
+async function renderWeather(city){
+  city = city || 'Київ';
+  const main = document.getElementById('main');
+  main.innerHTML = `<div class="dash-title">Погода для городу</div>
+  <p class="dash-sub">Прогноз опадів допомагає обрати правильний день для обприскування та поливу</p>
+  <div class="weather-search">
+    <input id="citySearch" value="${city}" placeholder="Назва міста">
+    <button onclick="renderWeather(document.getElementById('citySearch').value)">Показати</button>
+  </div>
+  <div class="weather-card" id="weatherResult">Завантаження прогнозу…</div>`;
+
+  try{
+    const geoRes = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1&language=uk&format=json`);
+    const geo = await geoRes.json();
+    if(!geo.results || geo.results.length===0){
+      document.getElementById('weatherResult').innerHTML = 'Місто не знайдено. Спробуйте іншу назву.';
+      return;
+    }
+    const {latitude, longitude, name} = geo.results[0];
+    const wRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,precipitation,relative_humidity_2m&daily=precipitation_sum,temperature_2m_max,temperature_2m_min&timezone=auto&forecast_days=5`);
+    const w = await wRes.json();
+    const cur = w.current;
+    const daily = w.daily;
+
+    let daysHtml = '';
+    for(let i=0;i<daily.time.length;i++){
+      const d = new Date(daily.time[i]);
+      const label = i===0 ? 'Сьогодні' : d.toLocaleDateString('uk-UA', {weekday:'short'});
+      daysHtml += `<div class="wday"><div class="wd-label">${label}</div><div class="wd-temp">${Math.round(daily.temperature_2m_min[i])}° / ${Math.round(daily.temperature_2m_max[i])}°</div><div class="wd-rain">опади: ${daily.precipitation_sum[i]} мм</div></div>`;
+    }
+
+    const tomorrowRain = daily.precipitation_sum[1] || 0;
+    const dayAfterRain = daily.precipitation_sum[2] || 0;
+    let advisory;
+    if(tomorrowRain > 1 || dayAfterRain > 1){
+      advisory = `<div class="spray-advisory warn">Найближчими днями очікуються опади — обприскування краще відкласти, дощ змиє препарат.</div>`;
+    } else {
+      advisory = `<div class="spray-advisory good">Опадів найближчим часом не очікується — гарний момент для обприскування.</div>`;
+    }
+
+    document.getElementById('weatherResult').innerHTML = `
+      <div class="weather-now">
+        <div class="temp">${Math.round(cur.temperature_2m)}°C</div>
+        <div class="desc">${name} · вологість повітря ${cur.relative_humidity_2m}% · опади зараз: ${cur.precipitation} мм</div>
+      </div>
+      <div class="weather-days">${daysHtml}</div>
+      ${advisory}
+    `;
+  } catch(e){
+    document.getElementById('weatherResult').innerHTML = 'Не вдалося завантажити прогноз погоди. Перевірте з’єднання і спробуйте ще раз.';
+  }
+}
+
+function getMoonInfo(date){
+  const lp = 2551443;
+  const newMoonRef = new Date(Date.UTC(1970,0,7,20,35,0)).getTime()/1000;
+  const phaseSec = ((date.getTime()/1000) - newMoonRef) % lp;
+  const normalized = phaseSec < 0 ? phaseSec + lp : phaseSec;
+  const day = normalized / 86400;
+  let name, growing;
+  if(day < 1.5){ name='Новий місяць'; growing=true; }
+  else if(day < 7.4){ name='Молодий місяць (росте)'; growing=true; }
+  else if(day < 8.4){ name='Перша чверть'; growing=true; }
+  else if(day < 13.8){ name='Місяць прибуває'; growing=true; }
+  else if(day < 15.8){ name='Повний місяць'; growing=false; }
+  else if(day < 21.1){ name='Місяць спадає'; growing=false; }
+  else if(day < 23.1){ name='Остання чверть'; growing=false; }
+  else { name='Старий місяць (спадає)'; growing=false; }
+  return {day, name, growing};
+}
+function renderMoon(){
+  const main = document.getElementById('main');
+  const info = getMoonInfo(new Date());
+  const litPercent = info.day <= 14.77 ? (info.day/14.77)*100 : ((29.53-info.day)/14.77)*100;
+  const growNote = info.growing
+    ? 'За народною традицією зростаючий місяць вважають вдалим часом для посіву культур, що плодоносять над землею — томати, огірки, перець, капуста, квасоля.'
+    : 'За народною традицією спадний місяць вважають вдалим часом для посіву чи пересадки коренеплодів і цибулинних культур — моркви, буряка, картоплі, цибулі, часнику.';
+  main.innerHTML = `<div class="dash-title">Фаза Місяця сьогодні</div>
+  <p class="dash-sub">Традиційний місячний календар городника</p>
+  <div class="moon-card">
+    <div class="moon-visual"><div class="lit" style="width:${litPercent.toFixed(0)}%; left:0;"></div></div>
+    <div class="moon-info">
+      <h3>${info.name}</h3>
+      <p>День місячного циклу: ${Math.floor(info.day)} з ~29.5</p>
+      <p>${growNote}</p>
+      <div class="moon-disclaimer">Це народна традиція, а не науково підтверджена методика — сильних доказів впливу фаз Місяця на врожайність немає. Багато городників дотримуються її з міркувань звички чи ритуалу, тож сприймайте як додаткову, необов'язкову практику поверх агротехнічних порад вище.</div>
+    </div>
+  </div>
+  <table class="moon-table"><thead><tr><th>Фаза</th><th>Традиційно підходить для</th></tr></thead><tbody>
+    <tr><td>Зростаючий місяць (від нового до повного)</td><td>Посів і висадка культур, що ростуть вгору: томати, огірки, перець, капуста, зелень</td></tr>
+    <tr><td>Спадний місяць (від повного до нового)</td><td>Посів коренеплодів і цибулинних: морква, буряк, картопля, цибуля, часник</td></tr>
+    <tr><td>Новий і повний місяць</td><td>Традиційно вважають «відпочинком» — посадки не рекомендують</td></tr>
+  </tbody></table>`;
+}
+
+function renderProblems(filter){
+  const main = document.getElementById('main');
+  const list = problems.filter(p=> !filter || (p.symptom+p.cause+p.action).toLowerCase().includes(filter.toLowerCase()));
+  main.innerHTML = `<div class="dash-title">Розпізнавання проблем</div>
+  <p class="dash-sub">Опишіть, що бачите на рослині — і знайдіть імовірну причину та що робити</p>
+  <div class="problem-search"><input id="probSearch" value="${filter||''}" placeholder="напр. жовті листя, наліт, дірки…" oninput="renderProblems(this.value)"></div>
+  <div id="probList">${list.map(p=>`<div class="problem-card">
+      <h4>${p.symptom}</h4>
+      <p><span class="lbl">Ймовірна причина:</span> ${p.cause}</p>
+      <p><span class="lbl">Що робити:</span> ${p.action}</p>
+    </div>`).join('') || '<div class="empty-note">Нічого не знайдено — спробуйте інше формулювання</div>'}</div>`;
+  document.getElementById('probSearch').focus();
+  document.getElementById('probSearch').selectionStart = document.getElementById('probSearch').value.length;
+}
+
+buildTabs();
+buildCropList();
+setActiveButtons();
+renderDashboard();
+</script>
+</body>
+</html>
