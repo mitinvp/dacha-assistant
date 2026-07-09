@@ -153,6 +153,7 @@
   .section-card p{ font-size:13.5px; line-height:1.55; margin:0 0 8px; }
   .months-tag{ font-family:'JetBrains Mono', monospace; font-size:11px; color:var(--soil); }
   .tag-pill{ display:inline-block; font-size:12px; background:var(--paper); border:1px solid var(--line-strong); border-radius:12px; padding:2px 9px; margin:2px 4px 2px 0; }
+  .tag-pill-muted{ font-style:italic; color:var(--soil); border-style:dashed; }
 
   .legend{ display:flex; gap:16px; flex-wrap:wrap; font-size:12px; color:var(--soil); margin-bottom:18px; }
 
@@ -273,6 +274,9 @@
     <div class="sidebar-label" id="treesLabel" style="display:none;">Дерева</div>
     <input class="sidebar-search" id="treeSearch" placeholder="Пошук дерева…" style="display:none;" oninput="filterList('tree', this.value)">
     <div id="treeList" style="display:none;"></div>
+    <div class="sidebar-label" id="herbsLabel" style="display:none;">Трави</div>
+    <input class="sidebar-search" id="herbSearch" placeholder="Пошук трави…" style="display:none;" oninput="filterList('herb', this.value)">
+    <div id="herbList" style="display:none;"></div>
   </div>
 
   <div class="main" id="main"></div>
@@ -293,7 +297,12 @@ const ICONS = {
   onion: `<svg viewBox="0 0 24 24" fill="none" stroke="#3B5D33" stroke-width="1.5" stroke-linecap="round"><path d="M12 20c-3 0-5-2.6-5-6s2-6.8 5-8.6c3 1.8 5 5.2 5 8.6s-2 6-5 6z" fill="#C98A2A" stroke="none"/><path d="M12 5.4V3"/></svg>`,
   garlic: `<svg viewBox="0 0 24 24" fill="none" stroke="#3B5D33" stroke-width="1.2" stroke-linecap="round"><path d="M12 20c-3 0-5-2-5-4.8S9 8 12 6c3 2 5 6.4 5 9.2S15 20 12 20z" fill="#EEE8D6" stroke="none"/><path d="M12 6.5v13" opacity=".5"/><path d="M9.5 8.5v9.5" opacity=".5"/><path d="M14.5 8.5v9.5" opacity=".5"/></svg>`,
   strawberry: `<svg viewBox="0 0 24 24" fill="none" stroke="#3B5D33" stroke-width="1.4" stroke-linecap="round"><path d="M12 20c-3.6 0-5.8-3.4-5.8-6.6C6.2 10.5 8.6 8.5 12 8.5s5.8 2 5.8 4.9c0 3.2-2.2 6.6-5.8 6.6z" fill="#A8432E" stroke="none"/><path d="M9 8.2l1.2-1.9M12 8v-2M15 8.2l-1.2-1.9"/><circle cx="10.2" cy="13" r=".5" fill="#EEE8D6" stroke="none"/><circle cx="13.8" cy="13" r=".5" fill="#EEE8D6" stroke="none"/><circle cx="12" cy="16" r=".5" fill="#EEE8D6" stroke="none"/></svg>`,
-  beet: `<svg viewBox="0 0 24 24" fill="none" stroke="#3B5D33" stroke-width="1.5" stroke-linecap="round"><path d="M12 6.5c3 0 5 2.6 5 6s-2 6-5 6-5-2.6-5-6 2-6 5-6z" fill="#A8432E" stroke="none"/><path d="M12 18.5V21"/><path d="M9 6.5c0-1 1-1.8 3-1.8"/><path d="M15 6.5c0-1-1-1.8-3-1.8"/></svg>`
+  beet: `<svg viewBox="0 0 24 24" fill="none" stroke="#3B5D33" stroke-width="1.5" stroke-linecap="round"><path d="M12 6.5c3 0 5 2.6 5 6s-2 6-5 6-5-2.6-5-6 2-6 5-6z" fill="#A8432E" stroke="none"/><path d="M12 18.5V21"/><path d="M9 6.5c0-1 1-1.8 3-1.8"/><path d="M15 6.5c0-1-1-1.8-3-1.8"/></svg>`,
+  zucchini: `<svg viewBox="0 0 24 24" fill="none" stroke="#3B5D33" stroke-width="1.5" stroke-linecap="round"><path d="M4 13c0-2.3 2.6-4.6 8-4.6s8 2.3 8 4.6-2.6 4.6-8 4.6-8-2.3-8-4.6z" fill="#3B5D33" stroke="none"/><path d="M8 10.5v5M12 9.8v5.4M16 10.5v5" stroke="#8FBF7A" stroke-width="1" opacity=".6"/></svg>`,
+  eggplant: `<svg viewBox="0 0 24 24" fill="none" stroke="#3B5D33" stroke-width="1.4" stroke-linecap="round"><path d="M12 6c1 0 2 .6 2 1.6 3 1 4.4 4 4.4 6.6 0 3.4-2.8 6-6.4 6s-6.4-2.6-6.4-6c0-2.6 1.4-5.6 4.4-6.6C10 6.6 11 6 12 6z" fill="#6B4C7A" stroke="none"/><path d="M9.5 7.2c.8-.5 1.7-.8 2.5-.8s1.7.3 2.5.8" stroke="#6B8F5E"/></svg>`,
+  radish: `<svg viewBox="0 0 24 24" fill="none" stroke="#3B5D33" stroke-width="1.4" stroke-linecap="round"><path d="M12 12c2.4 0 4 1.9 4 4.4 0 2.5-1.8 4.1-4 4.1s-4-1.6-4-4.1c0-2.5 1.6-4.4 4-4.4z" fill="#A8432E" stroke="none"/><path d="M9 11c-1-2-3-3-4.6-2.7M12 10.5V7M15 11c1-2 3-3 4.6-2.7"/></svg>`,
+  pumpkin: `<svg viewBox="0 0 24 24" fill="none" stroke="#3B5D33" stroke-width="1.3" stroke-linecap="round"><circle cx="12" cy="13.5" r="6.3" fill="#C98A2A" stroke="none"/><path d="M12 7.5v-2" stroke="#6B4C3A" stroke-width="1.8"/><path d="M8.4 8.6c1.1 1.4 1.1 8.4 0 9.8M12 7.3v12.5M15.6 8.6c-1.1 1.4-1.1 8.4 0 9.8" opacity=".4"/></svg>`,
+  beans: `<svg viewBox="0 0 24 24" fill="none" stroke="#3B5D33" stroke-width="1.4" stroke-linecap="round"><path d="M6 9c-1 3 0 7 3 9.5 3.5 3 8.5 1.8 9.5-1.8 1-3.6-1.4-6-4-5.3"/><circle cx="9.3" cy="12.3" r="1.1" fill="#6B8F5E" stroke="none"/><circle cx="11.7" cy="14.8" r="1.1" fill="#6B8F5E" stroke="none"/><circle cx="14.2" cy="16.6" r="1.1" fill="#6B8F5E" stroke="none"/></svg>`
 };
 
 function treeIconSvg(fruitColor, dual){
@@ -310,6 +319,68 @@ const TREE_ICONS = {
   apricot: treeIconSvg('#D9A441', false),
   walnut: treeIconSvg('#7A5B3A', false)
 };
+
+const HERB_ICONS = {
+  basil: `<svg viewBox="0 0 24 24" fill="none" stroke="#3B5D33" stroke-width="1.4" stroke-linecap="round"><path d="M12 20V9"/><ellipse cx="9" cy="10" rx="3.2" ry="2" fill="#6B8F5E" stroke="none" transform="rotate(-25 9 10)"/><ellipse cx="15" cy="10" rx="3.2" ry="2" fill="#6B8F5E" stroke="none" transform="rotate(25 15 10)"/></svg>`,
+  dill: `<svg viewBox="0 0 24 24" fill="none" stroke="#6B8F5E" stroke-width="1" stroke-linecap="round"><path d="M12 20V6"/><path d="M12 8l-4-2M12 8l4-2M12 11l-4-2M12 11l4-2M12 14l-3-1.5M12 14l3-1.5"/><circle cx="9" cy="5" r=".6" fill="#C98A2A" stroke="none"/><circle cx="12" cy="4" r=".6" fill="#C98A2A" stroke="none"/><circle cx="15" cy="5" r=".6" fill="#C98A2A" stroke="none"/></svg>`,
+  parsley: `<svg viewBox="0 0 24 24" fill="none" stroke="#3B5D33" stroke-width="1.3" stroke-linecap="round"><path d="M12 20V10"/><circle cx="10" cy="9" r="1.6" fill="#6B8F5E" stroke="none"/><circle cx="14" cy="9" r="1.6" fill="#6B8F5E" stroke="none"/><circle cx="12" cy="7" r="1.6" fill="#6B8F5E" stroke="none"/></svg>`,
+  cilantro: `<svg viewBox="0 0 24 24" fill="none" stroke="#3B5D33" stroke-width="1.3" stroke-linecap="round"><path d="M12 20V11"/><path d="M12 11c-2 0-3.5-1.3-3.8-3.3 2 .1 3.2 1 3.8 2.3.6-1.3 1.8-2.2 3.8-2.3C15.5 9.7 14 11 12 11z" fill="#6B8F5E" stroke="none"/></svg>`,
+  mint: `<svg viewBox="0 0 24 24" fill="none" stroke="#3B5D33" stroke-width="1.3" stroke-linecap="round"><path d="M12 20V8"/><path d="M12 10c-2.5-.3-4-1.8-4-3.5 2 0 3.4 1 4 2.5.6-1.5 2-2.5 4-2.5 0 1.7-1.5 3.2-4 3.5z" fill="#8FBF7A" stroke="none"/></svg>`,
+  sorrel: `<svg viewBox="0 0 24 24" fill="none" stroke="#3B5D33" stroke-width="1.4" stroke-linecap="round"><path d="M12 20V11"/><path d="M12 11c-1.5-3-1.2-5.5.3-7 1.2 2 1 5-.3 7z" fill="#6B8F5E" stroke="none"/><path d="M12 11c1.5-2 3.5-2.6 4.7-1.8-1 1.6-3 2.3-4.7 1.8z" fill="#6B8F5E" stroke="none"/></svg>`
+};
+
+const herbs = [
+  { id:'basil', name:'Базилік',
+    companions:['томати','перець'], avoid:['рута поруч'],
+    notes:[{stage:'Особливість', note:'Теплолюбний, боїться заморозків — висаджуйте, коли ґрунт добре прогрівся'}, {stage:'Збір', note:'Регулярно прищипуйте верхівки — рослина стане кущистішою і довше не зацвіте'}],
+    tasks:[
+      {type:'plant', months:[5], label:'Висадка розсади після загрози заморозків'},
+      {type:'fertilize', months:[6], label:'Легке азотне підживлення на початку росту'},
+      {type:'spray', months:[7], label:'Проти попелиці за потреби'},
+      {type:'harvest', months:[6,7,8,9], label:'Регулярне зрізання листя/верхівок'}
+    ]},
+  { id:'dill', name:'Кріп',
+    companions:['капуста','огірки','цибуля'], avoid:['морква поруч (уповільнює її ріст)'],
+    notes:[{stage:'Особливість', note:'Не любить надлишку добрив — краще недогодувати, ніж перегодувати'}, {stage:'Порада', note:'Сійте невеликими порціями кожні 2–3 тижні для постійно свіжої зелені'}],
+    tasks:[
+      {type:'plant', months:[4,5,6,7], label:'Посів у грунт (можна повторювати кілька разів за сезон)'},
+      {type:'harvest', months:[6,7,8,9], label:'Зрізання зелені по мірі відростання'}
+    ]},
+  { id:'parsley', name:'Петрушка',
+    companions:['томати','цибуля'], avoid:['салат поруч (за деякими спостереженнями пригнічує сходи)'],
+    notes:[{stage:'Особливість', note:'Сходить повільно (2–3 тижні) — не хвилюйтесь, якщо не видно сходів одразу'}, {stage:'Збір', note:'Зрізайте зовнішні листки, залишаючи центр рости — куш даватиме зелень довше'}],
+    tasks:[
+      {type:'plant', months:[4,5], label:'Посів у грунт'},
+      {type:'fertilize', months:[6], label:'Легке азотне підживлення'},
+      {type:'harvest', months:[6,7,8,9,10], label:'Регулярний збір зелені'}
+    ]},
+  { id:'cilantro', name:'Кінза (коріандр)',
+    companions:['капуста','шпинат'], avoid:['кріп поруч (перезапилюється, знижує якість насіння)','фенхель поруч'],
+    notes:[{stage:'Особливість', note:'Швидко йде в стрілку у спеку — сійте навесні та повторно наприкінці літа'}, {stage:'Порада', note:'Тримайте в напівтіні влітку, щоб сповільнити стрілкування'}],
+    tasks:[
+      {type:'plant', months:[4,5], label:'Весняний посів'},
+      {type:'plant', months:[8], label:'Пізньолітній посів (уникає літньої спеки)'},
+      {type:'harvest', months:[6,9], label:'Збір зелені до початку цвітіння'}
+    ]},
+  { id:'mint', name:'М’ята',
+    companions:['капуста','томати (відлякує частину шкідників)'], avoid:['будь-які сусіди без обмежувача коренів — м’ята агресивно витісняє все навколо'],
+    notes:[{stage:'Особливість', note:'Багаторічна й дуже агресивно розростається — саджайте в обмеженому контейнері чи бордюрі'}, {stage:'Збір', note:'Можна зрізати кілька разів за сезон, рослина швидко відростає'}],
+    tasks:[
+      {type:'plant', months:[5], label:'Садіння одноразово (далі розростається сама)'},
+      {type:'fertilize', months:[5], label:'Одноразове підживлення навесні'},
+      {type:'harvest', months:[6,7,8,9], label:'Регулярне зрізання пагонів'},
+      {type:'protect', months:[10], label:'Мульчування на зиму (у холодних регіонах)'}
+    ]},
+  { id:'sorrel', name:'Щавель',
+    companions:['полуниця'], avoid:[],
+    notes:[{stage:'Особливість', note:'Багаторічний, росте на одному місці 3–4 роки без пересадки'}, {stage:'Збір', note:'Не давайте зацвісти — квітконоси знижують якість листя, обрізайте їх'}],
+    tasks:[
+      {type:'plant', months:[4], label:'Садіння одноразово (багаторічна культура)'},
+      {type:'fertilize', months:[5], label:'Азотне підживлення навесні для нарощування листя'},
+      {type:'harvest', months:[5,6,7,8,9], label:'Регулярний збір листя (кілька хвиль за сезон)'},
+      {type:'protect', months:[10], label:'Мульчування на зиму'}
+    ]}
+];
 
 const crops = [
   { id:'tomato', name:'Томати', seal:'То', family:'Пасльонові',
@@ -426,11 +497,66 @@ const crops = [
       {type:'fertilize', months:[6,7], label:'Калійно-фосфорне підживлення (буряк любить калій)'},
       {type:'spray', months:[6], label:'Проти церкоспорозу за потреби'},
       {type:'harvest', months:[9,10], label:'Збір врожаю'}
+    ]},
+  { id:'zucchini', name:'Кабачки', seal:'Кб', family:'Гарбузові',
+    rotationGood:'Попередники: капуста, цибуля, бобові', rotationBad:'Не після огірків, гарбуза, кабачків — витримати 3 роки',
+    companions:['кукурудза','квасоля'], avoid:['картопля поруч'],
+    watering:[{stage:'Проростання', note:'Легкий, регулярний полив'}, {stage:'Плодоношення', note:'2 рази/тиждень, 10–15 л/м²'}],
+    tasks:[
+      {type:'plant', months:[5], label:'Посів у грунт або висадка розсади'},
+      {type:'fertilize', months:[6], label:'Азотне добриво на початку росту'},
+      {type:'fertilize', months:[7,8], label:'Калійне підживлення в період плодоношення'},
+      {type:'spray', months:[6,7], label:'Проти борошнистої роси за потреби'},
+      {type:'harvest', months:[7,8,9], label:'Регулярний збір молодих плодів (стимулює нові зав’язі)'}
+    ]},
+  { id:'eggplant', name:'Баклажани', seal:'Бк', family:'Пасльонові',
+    rotationGood:'Попередники: капуста, огірки, цибуля, бобові', rotationBad:'Не після помідорів, перцю, картоплі — витримати 3–4 роки',
+    companions:['базилік'], avoid:['фенхель поруч'],
+    watering:[{stage:'Після висадки', note:'Регулярний, помірний'}, {stage:'Плодоношення', note:'2 рази/тиждень, без пересихання ґрунту'}],
+    tasks:[
+      {type:'plant', months:[2,3], label:'Посів на розсаду (довгий період вирощування)'},
+      {type:'plant', months:[5], label:'Висадка розсади в теплицю або грунт'},
+      {type:'fertilize', months:[5,6], label:'Азотне добриво через 2 тижні після висадки'},
+      {type:'fertilize', months:[7,8], label:'Калійно-фосфорне добриво під час плодоношення'},
+      {type:'spray', months:[6,7], label:'Проти колорадського жука та павутинного кліща'},
+      {type:'harvest', months:[7,8,9], label:'Збір врожаю'}
+    ]},
+  { id:'radish', name:'Редиска', seal:'Рд', family:'Капустяні (хрестоцвіті)',
+    rotationGood:'Попередники: огірки, картопля, помідори', rotationBad:'Не після капусти, редьки, дайкону — витримати 2 роки',
+    companions:['морква','салат'], avoid:[],
+    watering:[{stage:'Весь цикл росту', note:'Часто і легко — пересихання робить коренеплід гірким і трухлявим'}],
+    tasks:[
+      {type:'plant', months:[4,5], label:'Весняний посів'},
+      {type:'plant', months:[8,9], label:'Осінній посів (уникає літньої спеки і стрілкування)'},
+      {type:'spray', months:[5], label:'Проти хрестоцвітої блішки за потреби'},
+      {type:'harvest', months:[5,6,9,10], label:'Збір урожаю (готовий приблизно за 3–4 тижні від посіву)'}
+    ]},
+  { id:'pumpkin', name:'Гарбуз', seal:'Гб', family:'Гарбузові',
+    rotationGood:'Попередники: капуста, цибуля, бобові', rotationBad:'Не після огірків, кабачків, гарбуза — витримати 3 роки',
+    companions:['кукурудза','квасоля'], avoid:[],
+    watering:[{stage:'Проростання', note:'Легкий, регулярний полив'}, {stage:'Ріст плодів', note:'1–2 рази/тиждень, 15–20 л/м²'}],
+    tasks:[
+      {type:'plant', months:[5], label:'Посів у грунт або висадка розсади'},
+      {type:'fertilize', months:[6], label:'Азотне добриво на початку росту'},
+      {type:'fertilize', months:[7,8], label:'Калійно-фосфорне підживлення під час наливу плодів'},
+      {type:'spray', months:[6,7], label:'Проти борошнистої роси за потреби'},
+      {type:'harvest', months:[9,10], label:'Збір врожаю після визрівання та здерев’яніння плодоніжки'}
+    ]},
+  { id:'beans', name:'Квасоля', seal:'Кв', family:'Бобові',
+    rotationGood:'Попередники: капуста, огірки, картопля — і сама квасоля добрий попередник (збагачує грунт азотом)', rotationBad:'Не після гороху, квасолі, сої — витримати 2–3 роки',
+    companions:['кукурудза','огірки'], avoid:['цибуля','часник'],
+    watering:[{stage:'Весь цикл росту', note:'Помірний, регулярний — уникайте перезволоження, що шкодить корінню'}],
+    tasks:[
+      {type:'plant', months:[5], label:'Посів у грунт після загрози заморозків'},
+      {type:'fertilize', months:[6], label:'Калійно-фосфорне підживлення під час цвітіння (азот майже не потрібен — бобові самі його фіксують)'},
+      {type:'spray', months:[6,7], label:'Проти попелиці за потреби'},
+      {type:'harvest', months:[7,8,9], label:'Регулярний збір стручків'}
     ]}
 ];
 
 const trees = [
   { id:'apple', name:'Яблуня', seal:'Яб',
+    companions:['цибуля','часник','чорнобривці'], avoid:['горіх волоський поруч (виділяє юглон, пригнічує ріст)'],
     care:[{stage:'Молоде дерево (1–3 роки)', note:'Полив регулярний у посуху, 2–3 відра на тиждень, приствольне коло тримати без бур’янів'}, {stage:'Доросле дерево', note:'Полив лише в тривалу посуху, кореневій системі вистачає природної вологи'}],
     tasks:[
       {type:'plant', months:[10], label:'Осіннє садіння саджанців (до заморозків)'},
@@ -446,6 +572,7 @@ const trees = [
       {type:'harvest', months:[8,9,10], label:'Збір врожаю (залежно від сорту)'}
     ]},
   { id:'pear', name:'Груша', seal:'Гр',
+    companions:['цибуля','часник'], avoid:['горіх волоський поруч (юглон пригнічує ріст)'],
     care:[{stage:'Молоде дерево', note:'Полив регулярний, груша чутливіша до пересихання ґрунту, ніж яблуня'}, {stage:'Доросле дерево', note:'Полив у посушливі періоди, особливо під час наливу плодів'}],
     tasks:[
       {type:'plant', months:[10], label:'Осіннє садіння саджанців'},
@@ -461,6 +588,7 @@ const trees = [
       {type:'harvest', months:[8,9], label:'Збір врожаю'}
     ]},
   { id:'plum', name:'Слива', seal:'Сл',
+    companions:['часник','чорнобривці'], avoid:['малина поруч (спільні шкідники та хвороби)'],
     care:[{stage:'Молоде дерево', note:'Регулярний полив перші 2–3 роки, слива не любить перезволоження'}, {stage:'Доросле дерево', note:'Полив у посуху, надлишок вологи може викликати розтріскування плодів'}],
     tasks:[
       {type:'plant', months:[4], label:'Весняне садіння саджанців (краще, ніж осіннє через ризик підмерзання)'},
@@ -473,6 +601,7 @@ const trees = [
       {type:'harvest', months:[8,9], label:'Збір врожаю'}
     ]},
   { id:'cherry', name:'Вишня і черешня', seal:'Вш',
+    companions:['часник','чорнобривці'], avoid:['горіх волоський поруч','малина поруч (спільні хвороби)'],
     care:[{stage:'Молоде дерево', note:'Полив помірний, кореневій системі шкодить застій води'}, {stage:'Доросле дерево', note:'Полив у посуху, зменшити за 2–3 тижні до збору для кращого смаку плодів'}],
     tasks:[
       {type:'plant', months:[4], label:'Весняне садіння саджанців'},
@@ -486,6 +615,7 @@ const trees = [
       {type:'harvest', months:[6,7], label:'Збір врожаю'}
     ]},
   { id:'apricot', name:'Абрикос', seal:'Аб',
+    companions:['часник','чорнобривці'], avoid:['горіх волоський поруч','полуниця впритул (конкуренція за вологу)'],
     care:[{stage:'Молоде дерево', note:'Полив помірний, абрикос погано переносить перезволоження'}, {stage:'Доросле дерево', note:'Полив рідкий, лише в сильну посуху; ранньою весною чутливий до підмерзання квіткових бруньок'}],
     tasks:[
       {type:'plant', months:[4], label:'Весняне садіння саджанців'},
@@ -499,6 +629,7 @@ const trees = [
       {type:'harvest', months:[7], label:'Збір врожаю'}
     ]},
   { id:'walnut', name:'Горіх волоський', seal:'Гх',
+    companions:[], avoid:['майже всі овочі й плодові дерева в радіусі крони — горіх виділяє юглон, що пригнічує сусідні рослини; краще саджати окремо від городу'],
     care:[{stage:'Молоде дерево (1–4 роки)', note:'Полив регулярний перші роки для формування глибокої кореневої системи'}, {stage:'Доросле дерево', note:'Практично не потребує поливу — коріння сягає глибоких шарів ґрунту'}],
     tasks:[
       {type:'plant', months:[10], label:'Осіннє садіння саджанців'},
@@ -525,6 +656,7 @@ const problems = [
 let currentMonth = new Date().getMonth() + 1;
 let activeCrop = null;
 let activeTree = null;
+let activeHerb = null;
 let currentView = 'overview';
 
 const monthSel = document.getElementById('monthSel');
@@ -538,11 +670,13 @@ monthSel.addEventListener('change', e=>{
   currentMonth = parseInt(e.target.value);
   if(currentView==='overview'){ if(activeCrop===null) renderDashboard(); else renderCrop(activeCrop); }
   if(currentView==='trees'){ if(activeTree===null) renderTreeDashboard(); else renderTree(activeTree); }
+  if(currentView==='herbs'){ if(activeHerb===null) renderHerbDashboard(); else renderHerb(activeHerb); }
 });
 
 const TABS = [
   {id:'overview', label:'Огляд'},
   {id:'trees', label:'Дерева'},
+  {id:'herbs', label:'Трави'},
   {id:'rotation', label:'Сівозміна'},
   {id:'weather', label:'Погода'},
   {id:'moon', label:'Фаза Місяця'},
@@ -571,21 +705,27 @@ function setView(view){
   const app = document.getElementById('appRoot');
   const cropList = document.getElementById('cropList');
   const treeList = document.getElementById('treeList');
+  const herbList = document.getElementById('herbList');
   const cropsLabel = document.getElementById('cropsLabel');
   const treesLabel = document.getElementById('treesLabel');
+  const herbsLabel = document.getElementById('herbsLabel');
   const cropSearch = document.getElementById('cropSearch');
   const treeSearch = document.getElementById('treeSearch');
-  if(view==='overview' || view==='trees'){
+  const herbSearch = document.getElementById('herbSearch');
+  if(view==='overview' || view==='trees' || view==='herbs'){
     sidebar.style.display = '';
     app.classList.remove('wide');
-    const showTrees = view==='trees';
-    cropList.style.display = showTrees ? 'none' : '';
-    cropsLabel.style.display = showTrees ? 'none' : '';
-    cropSearch.style.display = showTrees ? 'none' : '';
-    treeList.style.display = showTrees ? '' : 'none';
-    treesLabel.style.display = showTrees ? '' : 'none';
-    treeSearch.style.display = showTrees ? '' : 'none';
-    if(showTrees){ if(activeTree===null) renderTreeDashboard(); else renderTree(activeTree); }
+    const panes = {
+      overview: [cropList, cropsLabel, cropSearch],
+      trees: [treeList, treesLabel, treeSearch],
+      herbs: [herbList, herbsLabel, herbSearch]
+    };
+    Object.keys(panes).forEach(key=>{
+      const show = key===view;
+      panes[key].forEach(el=> el.style.display = show ? '' : 'none');
+    });
+    if(view==='trees'){ if(activeTree===null) renderTreeDashboard(); else renderTree(activeTree); }
+    else if(view==='herbs'){ if(activeHerb===null) renderHerbDashboard(); else renderHerb(activeHerb); }
     else { if(activeCrop===null) renderDashboard(); else renderCrop(activeCrop); }
   } else {
     sidebar.style.display = 'none';
@@ -619,8 +759,19 @@ function buildTreeList(){
     list.appendChild(btn);
   });
 }
+function buildHerbList(){
+  const list = document.getElementById('herbList');
+  herbs.forEach(h=>{
+    const btn = document.createElement('button');
+    btn.className = 'crop-btn';
+    btn.id = 'herb-'+h.id;
+    btn.innerHTML = `<span class="seal">${HERB_ICONS[h.id]}</span><span>${h.name}</span>`;
+    btn.onclick = ()=> selectHerb(h.id);
+    list.appendChild(btn);
+  });
+}
 function setActiveButtons(){
-  document.getElementById('dashBtn').className = (activeCrop===null && activeTree===null) ? 'dashboard-btn' : 'dashboard-btn inactive';
+  document.getElementById('dashBtn').className = (activeCrop===null && activeTree===null && activeHerb===null) ? 'dashboard-btn' : 'dashboard-btn inactive';
   crops.forEach(c=>{
     const el = document.getElementById('crop-'+c.id);
     el.className = 'crop-btn' + (activeCrop===c.id ? ' active' : '');
@@ -631,18 +782,25 @@ function setActiveButtons(){
     el.className = 'crop-btn' + (activeTree===t.id ? ' active' : '');
     el.setAttribute('aria-current', activeTree===t.id ? 'true' : 'false');
   });
+  herbs.forEach(h=>{
+    const el = document.getElementById('herb-'+h.id);
+    el.className = 'crop-btn' + (activeHerb===h.id ? ' active' : '');
+    el.setAttribute('aria-current', activeHerb===h.id ? 'true' : 'false');
+  });
 }
 function showDashboard(){
   if(currentView==='trees'){ activeTree = null; setActiveButtons(); renderTreeDashboard(); }
+  else if(currentView==='herbs'){ activeHerb = null; setActiveButtons(); renderHerbDashboard(); }
   else { activeCrop = null; setActiveButtons(); renderDashboard(); }
 }
 function selectCrop(id){ activeCrop = id; setActiveButtons(); renderCrop(id); }
 function selectTree(id){ activeTree = id; setActiveButtons(); renderTree(id); }
+function selectHerb(id){ activeHerb = id; setActiveButtons(); renderHerb(id); }
 
 function filterList(kind, query){
   const q = query.trim().toLowerCase();
-  const prefix = kind==='crop' ? 'crop-' : 'tree-';
-  const items = kind==='crop' ? crops : trees;
+  const map = {crop: ['crop-', crops], tree: ['tree-', trees], herb: ['herb-', herbs]};
+  const [prefix, items] = map[kind];
   items.forEach(item=>{
     const el = document.getElementById(prefix+item.id);
     el.style.display = item.name.toLowerCase().includes(q) ? '' : 'none';
@@ -685,9 +843,11 @@ async function toggleTheme(){
   try{ await window.storage.set('theme', next); } catch(e){ console.error('storage error', e); }
 }
 
-function makeIcs(cropName, taskLabel, months){
-  const year = new Date().getFullYear();
-  const month = months[0];
+function makeIcs(cropName, taskLabel, month){
+  const now = new Date();
+  let year = now.getFullYear();
+  const nowMonth = now.getMonth() + 1;
+  if(month < nowMonth || (month === nowMonth && now.getDate() > 10)) year += 1;
   const dt = new Date(year, month-1, 10, 9, 0);
   const pad = n => String(n).padStart(2,'0');
   const fmt = d => `${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}T${pad(d.getHours())}${pad(d.getMinutes())}00`;
@@ -721,7 +881,7 @@ function renderDashboard(){
   const groups = {plant:[], fertilize:[], spray:[], harvest:[]};
   crops.forEach(c=>{
     c.tasks.forEach(t=>{
-      if(t.months.includes(currentMonth)) groups[t.type].push({crop:c.name, label:t.label, months:t.months});
+      if(t.months.includes(currentMonth)) groups[t.type].push({crop:c.name, label:t.label});
     });
   });
   let html = `<div class="dash-title">${MONTHS[currentMonth-1]}: що робити на ділянці</div>
@@ -734,12 +894,27 @@ function renderDashboard(){
       html += `<div class="empty-note">Немає запланованих завдань цього типу цього місяця</div>`;
     } else {
       groups[type].forEach((item,i)=>{
-        html += `<div class="task-row"><span><b>${item.crop}</b> — ${item.label}</span><button class="ics-btn" onclick='makeIcs(${JSON.stringify(item.crop)}, ${JSON.stringify(item.label)}, ${JSON.stringify(item.months)})'>+ у календар</button></div>`;
+        html += `<div class="task-row"><span><b>${item.crop}</b> — ${item.label}</span><button class="ics-btn" id="ics-${type}-${i}">+ у календар</button></div>`;
       });
     }
     html += `</div>`;
   });
   main.innerHTML = html;
+  Object.keys(groups).forEach(type=>{
+    groups[type].forEach((item,i)=>{
+      const btn = document.getElementById(`ics-${type}-${i}`);
+      if(btn) btn.onclick = ()=> makeIcs(item.crop, item.label, currentMonth);
+    });
+  });
+}
+
+function companionSectionHtml(companions, avoid, title){
+  const pills = arr => arr && arr.length
+    ? arr.map(x=>`<span class="tag-pill">${x}</span>`).join('')
+    : `<span class="tag-pill tag-pill-muted">особливих обмежень не виявлено</span>`;
+  return `<div class="section-card companions"><h4>${title}</h4>
+    <p><b>Добре поруч:</b> ${pills(companions)}</p>
+    <p><b>Уникати поруч:</b> ${pills(avoid)}</p></div>`;
 }
 
 function renderCrop(id){
@@ -776,9 +951,7 @@ function renderCrop(id){
     <p><b>Родина:</b> ${c.family}</p>
     <p>${c.rotationGood}</p>
     <p>${c.rotationBad}</p></div>`;
-  sectionsHtml += `<div class="section-card companions"><h4>Сусідство на грядці</h4>
-    <p><b>Добре поруч:</b> ${c.companions.map(x=>`<span class="tag-pill">${x}</span>`).join('')}</p>
-    <p><b>Уникати поруч:</b> ${c.avoid.map(x=>`<span class="tag-pill">${x}</span>`).join('')}</p></div>`;
+  sectionsHtml += companionSectionHtml(c.companions, c.avoid, 'Сусідство на грядці');
   sectionsHtml += `<div class="section-card watering"><h4>Норми поливу</h4><ul>`;
   c.watering.forEach(w=>{ sectionsHtml += `<li><b>${w.stage}:</b> ${w.note}</li>`; });
   sectionsHtml += `</ul></div>`;
@@ -802,7 +975,7 @@ function renderTreeDashboard(){
   const groups = {plant:[], prune:[], fertilize:[], spray:[], protect:[], harvest:[]};
   trees.forEach(t=>{
     t.tasks.forEach(task=>{
-      if(task.months.includes(currentMonth)) groups[task.type].push({tree:t.name, label:task.label, months:task.months});
+      if(task.months.includes(currentMonth)) groups[task.type].push({tree:t.name, label:task.label});
     });
   });
   let html = `<div class="dash-title">${MONTHS[currentMonth-1]}: догляд за деревами</div>
@@ -814,13 +987,19 @@ function renderTreeDashboard(){
     if(groups[type].length===0){
       html += `<div class="empty-note">Немає запланованих завдань цього типу цього місяця</div>`;
     } else {
-      groups[type].forEach(item=>{
-        html += `<div class="task-row"><span><b>${item.tree}</b> — ${item.label}</span><button class="ics-btn" onclick='makeIcs(${JSON.stringify(item.tree)}, ${JSON.stringify(item.label)}, ${JSON.stringify(item.months)})'>+ у календар</button></div>`;
+      groups[type].forEach((item,i)=>{
+        html += `<div class="task-row"><span><b>${item.tree}</b> — ${item.label}</span><button class="ics-btn" id="tics-${type}-${i}">+ у календар</button></div>`;
       });
     }
     html += `</div>`;
   });
   main.innerHTML = html;
+  Object.keys(groups).forEach(type=>{
+    groups[type].forEach((item,i)=>{
+      const btn = document.getElementById(`tics-${type}-${i}`);
+      if(btn) btn.onclick = ()=> makeIcs(item.tree, item.label, currentMonth);
+    });
+  });
 }
 
 function renderTree(id){
@@ -859,6 +1038,7 @@ function renderTree(id){
   sectionsHtml += `<div class="section-card care"><h4>Полив і догляд</h4><ul>`;
   t.care.forEach(w=>{ sectionsHtml += `<li><b>${w.stage}:</b> ${w.note}</li>`; });
   sectionsHtml += `</ul></div>`;
+  sectionsHtml += companionSectionHtml(t.companions, t.avoid, 'Сусідство в саду');
   sectionsHtml += '</div>';
 
   main.innerHTML = `
@@ -870,6 +1050,92 @@ function renderTree(id){
     ${timelineHtml}
     ${sectionsHtml}
   `;
+}
+
+const HERB_TYPE_ORDER = ['plant','fertilize','spray','protect','harvest'];
+
+function renderHerbDashboard(){
+  const main = document.getElementById('main');
+  const groups = {plant:[], fertilize:[], spray:[], protect:[], harvest:[]};
+  herbs.forEach(h=>{
+    h.tasks.forEach(task=>{
+      if(task.months.includes(currentMonth)) groups[task.type].push({herb:h.name, label:task.label});
+    });
+  });
+  let html = `<div class="dash-title">${MONTHS[currentMonth-1]}: догляд за травами</div>
+  <p class="dash-sub">Зведення завдань по зелені та прянощах на цей місяць</p>`;
+
+  HERB_TYPE_ORDER.forEach(type=>{
+    html += `<div class="task-group ${type}"><h3>${TYPE_LABEL[type]}</h3>`;
+    if(groups[type].length===0){
+      html += `<div class="empty-note">Немає запланованих завдань цього типу цього місяця</div>`;
+    } else {
+      groups[type].forEach((item,i)=>{
+        html += `<div class="task-row"><span><b>${item.herb}</b> — ${item.label}</span><button class="ics-btn" id="hics-${type}-${i}">+ у календар</button></div>`;
+      });
+    }
+    html += `</div>`;
+  });
+  main.innerHTML = html;
+  Object.keys(groups).forEach(type=>{
+    groups[type].forEach((item,i)=>{
+      const btn = document.getElementById(`hics-${type}-${i}`);
+      if(btn) btn.onclick = ()=> makeIcs(item.herb, item.label, currentMonth);
+    });
+  });
+}
+
+function renderHerb(id){
+  const h = herbs.find(x=>x.id===id);
+  const main = document.getElementById('main');
+
+  let timelineHtml = '<div class="timeline">';
+  for(let m=1; m<=12; m++){
+    const dots = [...new Set(h.tasks.filter(task=>task.months.includes(m)).map(task=>task.type))];
+    timelineHtml += `<div class="tl-cell"><span class="tl-label">${MONTHS_SHORT[m-1]}</span><div class="tl-dots">`;
+    dots.forEach(type=>{ timelineHtml += `<span class="dot ${type}"></span>`; });
+    timelineHtml += `</div></div>`;
+  }
+  timelineHtml += '</div>';
+
+  const legend = `<div class="legend">
+    <span><span class="dot plant"></span> Садіння</span>
+    <span><span class="dot fertilize"></span> Удобрення</span>
+    <span><span class="dot spray"></span> Обприскування</span>
+    <span><span class="dot protect"></span> Захист на зиму</span>
+    <span><span class="dot harvest"></span> Збір врожаю</span>
+  </div>`;
+
+  let sectionsHtml = '<div class="sections">';
+  HERB_TYPE_ORDER.forEach(type=>{
+    const items = h.tasks.filter(task=>task.type===type);
+    if(items.length===0) return;
+    sectionsHtml += `<div class="section-card ${type}"><h4>${TYPE_LABEL[type]}</h4><ul>`;
+    items.forEach(task=>{
+      const monthsStr = task.months.map(m=>MONTHS_SHORT[m-1]).join(', ');
+      sectionsHtml += `<li>${task.label}<br><span class="months-tag">${monthsStr}</span></li>`;
+    });
+    sectionsHtml += `</ul></div>`;
+  });
+  sectionsHtml += `<div class="section-card care"><h4>Особливості й поради</h4><ul>`;
+  h.notes.forEach(n=>{ sectionsHtml += `<li><b>${n.stage}:</b> ${n.note}</li>`; });
+  sectionsHtml += `</ul></div>`;
+  sectionsHtml += companionSectionHtml(h.companions, h.avoid, 'Сусідство на грядці');
+  sectionsHtml += '</div>';
+
+  main.innerHTML = `
+    <div class="crop-head">
+      <div class="seal-lg">${HERB_ICONS[h.id]}</div>
+      <h2>${h.name}</h2>
+    </div>
+    ${legend}
+    ${timelineHtml}
+    ${sectionsHtml}
+  `;
+}
+
+function escapeHtml(str){
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
 
 let beds = [];
@@ -906,13 +1172,14 @@ async function renderRotation(){
 }
 function drawBeds(){
   const cont = document.getElementById('bedsContainer');
+  if(!cont) return;
   const year = new Date().getFullYear();
   const years = [year-2, year-1, year];
   let html = '';
   beds.forEach(bed=>{
     html += `<div class="bed-card">
       <div class="bed-head">
-        <input value="${bed.name}" onchange="renameBed('${bed.id}', this.value)">
+        <input value="${escapeHtml(bed.name)}" onchange="renameBed('${bed.id}', this.value)">
         <button class="remove-bed" onclick="removeBed('${bed.id}')">видалити грядку</button>
       </div>
       <div class="bed-years">`;
@@ -986,12 +1253,16 @@ async function searchCity(city){
     }
     let html = `<div class="candidate-hint">Знайдено кілька збігів — оберіть свій населений пункт:</div><div class="candidate-list">`;
     geo.results.forEach((r,i)=>{
-      html += `<button class="candidate-item" onclick='loadWeatherAt(${r.latitude}, ${r.longitude}, ${JSON.stringify(describePlace(r))})'>
+      html += `<button class="candidate-item" id="cand-${i}">
         <b>${r.name}</b><span>${[r.admin2, r.admin1, r.country].filter(Boolean).join(', ')} · ${r.latitude.toFixed(2)}, ${r.longitude.toFixed(2)}</span>
       </button>`;
     });
     html += `</div>`;
     result.innerHTML = html;
+    geo.results.forEach((r,i)=>{
+      const btn = document.getElementById(`cand-${i}`);
+      if(btn) btn.onclick = ()=> loadWeatherAt(r.latitude, r.longitude, describePlace(r));
+    });
   } catch(e){
     result.innerHTML = 'Не вдалося виконати пошук. Перевірте з’єднання і спробуйте ще раз.';
   }
@@ -1096,24 +1367,27 @@ function renderMoon(){
   </tbody></table>`;
 }
 
-function renderProblems(filter){
+function renderProblems(){
   const main = document.getElementById('main');
-  const list = problems.filter(p=> !filter || (p.symptom+p.cause+p.action).toLowerCase().includes(filter.toLowerCase()));
   main.innerHTML = `<div class="dash-title">Розпізнавання проблем</div>
   <p class="dash-sub">Опишіть, що бачите на рослині — і знайдіть імовірну причину та що робити</p>
-  <div class="problem-search"><input id="probSearch" value="${filter||''}" placeholder="напр. жовті листя, наліт, дірки…" oninput="renderProblems(this.value)"></div>
-  <div id="probList">${list.map(p=>`<div class="problem-card">
+  <div class="problem-search"><input id="probSearch" placeholder="напр. жовті листя, наліт, дірки…" oninput="updateProblemsList(this.value)"></div>
+  <div id="probList"></div>`;
+  updateProblemsList('');
+}
+function updateProblemsList(filter){
+  const list = problems.filter(p=> !filter || (p.symptom+p.cause+p.action).toLowerCase().includes(filter.toLowerCase()));
+  document.getElementById('probList').innerHTML = list.map(p=>`<div class="problem-card">
       <h4>${p.symptom}</h4>
       <p><span class="lbl">Ймовірна причина:</span> ${p.cause}</p>
       <p><span class="lbl">Що робити:</span> ${p.action}</p>
-    </div>`).join('') || '<div class="empty-note">Нічого не знайдено — спробуйте інше формулювання</div>'}</div>`;
-  document.getElementById('probSearch').focus();
-  document.getElementById('probSearch').selectionStart = document.getElementById('probSearch').value.length;
+    </div>`).join('') || '<div class="empty-note">Нічого не знайдено — спробуйте інше формулювання</div>';
 }
 
 buildTabs();
 buildCropList();
 buildTreeList();
+buildHerbList();
 setActiveButtons();
 renderDashboard();
 initSidebarToggle();
