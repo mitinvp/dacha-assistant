@@ -64,6 +64,9 @@
   .month-picker{ display:flex; align-items:center; gap:8px; font-family:'JetBrains Mono', monospace; font-size:13px; }
   .month-picker select{ font-family:'JetBrains Mono', monospace; font-size:13px; padding:7px 10px; background: var(--paper-2); border:1px solid var(--line-strong); border-radius:3px; color:var(--ink); }
   .theme-toggle{ padding:7px 12px; background:var(--paper-2); border:1px solid var(--line-strong); border-radius:3px; font-family:'Inter', sans-serif; font-size:12.5px; font-weight:600; cursor:pointer; color:var(--ink); white-space:nowrap; }
+  .auth-info{ font-family:'Inter', sans-serif; font-size:12.5px; color:var(--soil); font-weight:600; }
+  .sync-note{ padding: 0 28px 12px; font-size:12px; color:var(--soil); font-style:italic; }
+  .sync-note.synced{ color:var(--leaf); font-style:normal; }
   .global-search{ position:relative; padding: 0 28px 14px; }
   .global-search input{ width:100%; padding:10px 14px; border:1px solid var(--line-strong); border-radius:6px; background:var(--paper-2); color:var(--ink); font-size:14px; font-family:'Inter', sans-serif; }
   .global-search-results{ position:absolute; left:28px; right:28px; top:calc(100% - 8px); background:var(--paper); border:1px solid var(--line-strong); border-radius:6px; box-shadow:0 6px 18px rgba(0,0,0,0.15); z-index:20; max-height:340px; overflow-y:auto; display:none; }
@@ -254,7 +257,7 @@
 
   @media print{
     body{ background:#fff; }
-    .sidebar, .tabs, .theme-toggle, .month-picker, .ics-btn, .weather-search, .sidebar-toggle, .candidate-list, .notes-box textarea, .notes-status, .global-search{ display:none !important; }
+    .sidebar, .tabs, .theme-toggle, .month-picker, .ics-btn, .weather-search, .sidebar-toggle, .candidate-list, .notes-box textarea, .notes-status, .global-search, .sync-note, #authBtn{ display:none !important; }
     .notes-print-text{ display:block !important; }
     .app{ grid-template-columns: 1fr; }
     .header{ border-bottom:2px solid #000; }
@@ -263,6 +266,9 @@
     a[href]::after{ content:''; }
   }
 </style>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 </head>
 <body>
 <div class="app" id="appRoot">
@@ -283,10 +289,13 @@
       <div class="month-picker">
         <label for="monthSel">Місяць:</label>
         <select id="monthSel"></select>
+        <span class="auth-info" id="authInfo"></span>
+        <button class="theme-toggle" id="authBtn" onclick="signInWithGoogle()">🔑 Увійти через Google</button>
         <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()">🌙 Темна тема</button>
         <button class="theme-toggle" onclick="window.print()" title="Роздрукувати або зберегти як PDF поточну сторінку">🖨️ Друк / PDF</button>
       </div>
     </div>
+    <div class="sync-note" id="syncNote">🔒 Нотатки й грядки зберігаються лише в цьому браузері. Увійдіть через Google, щоб синхронізувати їх з іншими пристроями.</div>
     <div class="global-search">
       <input id="globalSearch" placeholder="🔍 Пошук по всьому сайту — культури, дерева, кущі, трави, квіти…" oninput="handleGlobalSearch(this.value)" autocomplete="off">
       <div class="global-search-results" id="globalSearchResults"></div>
@@ -320,6 +329,93 @@
 </div>
 
 <script>
+// --- Firebase (Google sign-in + Firestore sync for notes and beds) ---
+const firebaseConfig = {
+  apiKey: "AIzaSyBAT2-6C9jgSHSnL5xSQ1Ig28Fjsfob0jg",
+  authDomain: "dacha-assistant-477b1.firebaseapp.com",
+  projectId: "dacha-assistant-477b1",
+  storageBucket: "dacha-assistant-477b1.firebasestorage.app",
+  messagingSenderId: "428504807113",
+  appId: "1:428504807113:web:281a6d7b2a32d76188ff18"
+};
+let fbAuth = null, fbDb = null, currentUser = null;
+try{
+  firebase.initializeApp(firebaseConfig);
+  fbAuth = firebase.auth();
+  fbDb = firebase.firestore();
+} catch(e){ console.error('Firebase init failed — sign-in/sync unavailable', e); }
+
+function updateAuthUI(user){
+  const btn = document.getElementById('authBtn');
+  const info = document.getElementById('authInfo');
+  const note = document.getElementById('syncNote');
+  if(!btn) return;
+  if(user){
+    btn.textContent = '🚪 Вийти';
+    btn.onclick = signOutUser;
+    if(info) info.textContent = user.displayName || user.email || '';
+    if(note){ note.textContent = '☁️ Синхронізовано як ' + (user.displayName || user.email || 'користувач') + ' — нотатки й грядки доступні з будь-якого пристрою після входу'; note.classList.add('synced'); }
+  } else {
+    btn.textContent = '🔑 Увійти через Google';
+    btn.onclick = signInWithGoogle;
+    if(info) info.textContent = '';
+    if(note){ note.textContent = '🔒 Нотатки й грядки зберігаються лише в цьому браузері. Увійдіть через Google, щоб синхронізувати їх з іншими пристроями.'; note.classList.remove('synced'); }
+  }
+}
+
+async function signInWithGoogle(){
+  if(!fbAuth){ alert('Вхід тимчасово недоступний.'); return; }
+  const provider = new firebase.auth.GoogleAuthProvider();
+  try{ await fbAuth.signInWithPopup(provider); }
+  catch(e){ console.error('sign-in failed', e); alert('Не вдалося увійти: ' + e.message); }
+}
+async function signOutUser(){
+  if(!fbAuth) return;
+  try{ await fbAuth.signOut(); } catch(e){ console.error(e); }
+}
+
+async function pullCloudData(uid){
+  try{
+    const doc = await fbDb.collection('users').doc(uid).get();
+    if(doc.exists){
+      const data = doc.data();
+      if(data.notes){
+        Object.keys(data.notes).forEach(k=> localStorage.setItem('note:'+k, data.notes[k]));
+      }
+      if(data.beds){
+        localStorage.setItem('beds', JSON.stringify(data.beds));
+      }
+    } else {
+      await pushAllLocalData(uid);
+    }
+  } catch(e){ console.error('cloud pull failed', e); }
+}
+
+async function pushAllLocalData(uid){
+  try{
+    const notes = {};
+    for(let i=0;i<localStorage.length;i++){
+      const key = localStorage.key(i);
+      if(key && key.startsWith('note:')) notes[key.slice(5)] = localStorage.getItem(key);
+    }
+    let bedsData = [];
+    try{ bedsData = JSON.parse(localStorage.getItem('beds') || '[]'); } catch(e){}
+    await fbDb.collection('users').doc(uid).set({ notes, beds: bedsData }, {merge:true});
+  } catch(e){ console.error('cloud push failed', e); }
+}
+
+if(fbAuth){
+  fbAuth.onAuthStateChanged(async (user)=>{
+    currentUser = user;
+    updateAuthUI(user);
+    if(user){
+      await pullCloudData(user.uid);
+      if(typeof beds !== 'undefined') loadBeds();
+      setView(currentView);
+    }
+  });
+}
+
 const MONTHS = ['Січень','Лютий','Березень','Квітень','Травень','Червень','Липень','Серпень','Вересень','Жовтень','Листопад','Грудень'];
 const MONTHS_SHORT = ['січ','лют','бер','кві','тра','чер','лип','сер','вер','жов','лис','гру'];
 const TYPE_LABEL = {plant:'Садіння / висадка', fertilize:'Удобрення', spray:'Обприскування', harvest:'Збір врожаю', prune:'Обрізка', protect:'Захист на зиму'};
@@ -1263,19 +1359,19 @@ function applyTheme(theme){
   const btn = document.getElementById('themeToggle');
   if(btn) btn.textContent = theme==='dark' ? '☀️ Світла тема' : '🌙 Темна тема';
 }
-async function initTheme(){
+function initTheme(){
   let theme = 'light';
   try{
-    const res = await window.storage.get('theme');
-    if(res && res.value) theme = res.value;
-  } catch(e){ /* no saved preference yet */ }
+    const saved = localStorage.getItem('theme');
+    if(saved) theme = saved;
+  } catch(e){ /* localStorage unavailable (e.g. private browsing) */ }
   applyTheme(theme);
 }
-async function toggleTheme(){
+function toggleTheme(){
   const current = document.documentElement.getAttribute('data-theme') || 'light';
   const next = current==='dark' ? 'light' : 'dark';
   applyTheme(next);
-  try{ await window.storage.set('theme', next); } catch(e){ console.error('storage error', e); }
+  try{ localStorage.setItem('theme', next); } catch(e){ console.error('storage error', e); }
 }
 
 function makeIcs(cropName, taskLabel, month){
@@ -1400,29 +1496,32 @@ function notesSectionHtml(category, id){
   </div>`;
 }
 
-async function loadNote(category, id){
+function loadNote(category, id){
   const ta = document.getElementById(`notes-${category}-${id}`);
   const pt = document.getElementById(`notes-print-${category}-${id}`);
   if(!ta) return;
   try{
-    const res = await window.storage.get(`note:${category}:${id}`);
-    const val = (res && res.value) ? res.value : '';
-    if(document.getElementById(`notes-${category}-${id}`)){
-      ta.value = val;
-      if(pt) pt.textContent = val || '—';
-    }
-  } catch(e){ /* no saved note yet — leave field empty */ }
+    const val = localStorage.getItem(`note:${category}:${id}`) || '';
+    ta.value = val;
+    if(pt) pt.textContent = val || '—';
+  } catch(e){ /* localStorage unavailable — leave field empty */ }
 }
 
-async function saveNote(category, id, value){
+function saveNote(category, id, value){
   const statusEl = document.getElementById(`notes-status-${category}-${id}`);
   try{
-    await window.storage.set(`note:${category}:${id}`, value);
+    localStorage.setItem(`note:${category}:${id}`, value);
     const pt = document.getElementById(`notes-print-${category}-${id}`);
     if(pt) pt.textContent = value || '—';
     if(statusEl){ statusEl.textContent = 'Збережено'; setTimeout(()=>{ if(statusEl) statusEl.textContent=''; }, 2000); }
+    if(currentUser && fbDb){
+      const fieldKey = `${category}:${id}`;
+      fbDb.collection('users').doc(currentUser.uid).set({ notes: { [fieldKey]: value } }, {merge:true})
+        .then(()=>{ if(statusEl) statusEl.textContent = 'Збережено і синхронізовано ☁️'; })
+        .catch(e=>console.error('cloud note save failed', e));
+    }
   } catch(e){
-    if(statusEl) statusEl.textContent = 'Не вдалося зберегти';
+    if(statusEl) statusEl.textContent = 'Не вдалося зберегти (сховище браузера недоступне)';
     console.error('note save failed', e);
   }
 }
@@ -1824,17 +1923,20 @@ function escapeHtml(str){
 }
 
 let beds = [];
-async function loadBeds(){
+function loadBeds(){
   try{
-    const res = await window.storage.get('beds');
-    beds = res ? JSON.parse(res.value) : [];
+    const saved = localStorage.getItem('beds');
+    beds = saved ? JSON.parse(saved) : [];
   } catch(e){ beds = []; }
   if(beds.length===0){
     beds = [{id:'b1', name:'Грядка 1', assignments:{}}];
   }
 }
-async function saveBeds(){
-  try{ await window.storage.set('beds', JSON.stringify(beds)); } catch(e){ console.error('storage error', e); }
+function saveBeds(){
+  try{ localStorage.setItem('beds', JSON.stringify(beds)); } catch(e){ console.error('storage error', e); }
+  if(currentUser && fbDb){
+    fbDb.collection('users').doc(currentUser.uid).set({ beds }, {merge:true}).catch(e=>console.error('cloud beds save failed', e));
+  }
 }
 function familyOf(cropId){
   const c = crops.find(x=>x.id===cropId);
